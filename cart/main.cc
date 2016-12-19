@@ -11,16 +11,9 @@ int main(int argc, char *argv[]) {
   Matrix m;
   m.load(filename);
 
-  // Matrix testing
-  Matrix m1, m2;
-  m.split(1, 0.001, m1, m2);
-  printf("%d\trows2=%d\n", m1.rows(), m2.rows());
-  std::vector<int> r = range(10);
-  std::vector<int> c = range(10);
-  Matrix s = m.submatrix(r, c);
-  // Regression Tree
+  // 构建决策树
   TreeNode root;
-  std::vector<int> columns = range(10);
+  std::vector<int> columns = range(2); // 训练的列数
   root.train(m, columns);
   printf("%d nodes in tree\n", root.count());
 

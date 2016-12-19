@@ -2,13 +2,13 @@
 #include <vector>
 #include "stats.h"
 
-double sum(const std::vector<double> &list) { // basic_linear_regression() and mean() in stats.cc
+double sum(const std::vector<double> &list) { // basic_linear_regression() and mean() in stats.cc // O(size)
   double result = 0.0;
   for (int i = 0; i < list.size(); ++i) result += list[i];
   return result;
 }
 
-double sum_squared(const std::vector<double> &list) { // basic_linear_regression() in stats.cc
+double sum_squared(const std::vector<double> &list) { // basic_linear_regression() in stats.cc // O(list.size())
   double result = 0.0;
   for (int i = 0; i < list.size(); ++i) result += list[i]*list[i];
   return result;
@@ -36,12 +36,12 @@ double covariance(const std::vector<double> &dist1, const std::vector<double> &d
   return result;
 }
 
-void basic_linear_regression(const std::vector<double> &x, const std::vector<double> &y, double &m, double &b) { // test_regression() in stats.cc and regression_score() in tree_node.cc
+void basic_linear_regression(const std::vector<double> &x, const std::vector<double> &y, double &m, double &b) { // test_regression() in stats.cc and regression_score() in tree_node.cc // 一元线性回归
   int length = x.size();
   double sum_x = sum(x);
   double sum_y = sum(y);
 
-  double sum_x_squared = sum_squared(x);
+  double sum_x_squared = sum_squared(x); // 计算平方和
   double cov = covariance(x, y);
 
   double numerator = (cov - (sum_x*sum_y)/length);
@@ -62,7 +62,6 @@ void test_regression() { // test_regression() in main.cc
   y.push_back(8.0);
   double m, b;
   basic_linear_regression(x, y, m, b);
-  printf("y = %f*x + %f\n", m, b);
 }
 
 double sum_of_squares(const std::vector<double> &x, const std::vector<double> &y, double m, double b) { // regression_score() in tree_node.cc
