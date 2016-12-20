@@ -1,6 +1,6 @@
 #include <sstream> // stringstream
 
-std::vector<int> inline range(int start, int stop=-1, int step=1) { // range() in main.cc and matrix.cc
+std::vector<int> inline range(int start, int stop=-1, int step=1) { // range() in main.cc and matrix.cc O(stop)
   std::vector<int> result;
   if (stop == -1) {
     stop = start;
@@ -10,7 +10,7 @@ std::vector<int> inline range(int start, int stop=-1, int step=1) { // range() i
   return result;
 }
 
-std::vector<std::string> inline split_string(const std::string &source, const char *delimiter = " ", bool keep_empty = false) { // split_string() in matrix.cc
+std::vector<std::string> inline split_string(const std::string &source, const char *delimiter = " ", bool keep_empty = false) { // split_string() in matrix.cc O(columns_size)
   std::vector<std::string> results;
 
   size_t prev = 0;
@@ -32,4 +32,25 @@ std::string inline join(std::vector<T> &list, const char delimiter) { // join() 
     if (i < list.size()-1) ss << delimiter;
   }
   return ss.str();
+}
+
+// 转换python的负切片索引至常规索引
+template<typename T>
+int inline negative_index_covert(std::vector<T> list, int index) {
+  // 边界判断
+  if (index >= 0) return index;
+  else return index+list.size();
+}
+
+// 切片一个数组，不可变，类似python的[::]操作
+template<typename T>
+std::vector<T> inline slice(std::vector<T> list, int start=0, int end=-1, int step=1) {
+  std::vector<T> result;
+  start = negative_index_covert(list, start);
+  end = negative_index_covert(list, end);
+  for (int i = start; i < end; i +=step) {
+    T element = list[i];
+    result.push_back(element);
+  }
+  return result;
 }

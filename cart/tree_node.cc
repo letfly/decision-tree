@@ -24,13 +24,9 @@ int TreeNode::count() { // root.count() in main.cc
   return result;
 }
 
-double regression_score(Matrix &matrix, int col_index) { // TreeNode::train() in tree_node.cc
+double regression_score(Matrix &matrix, int col_index) { // TreeNode::train() in tree_node.cc O(basic_linear_regression)
   std::vector<double> x = matrix.column(col_index); // 填充第col_index列的数据至x
-  for (auto i: x) printf("%f ", i);
-  printf("x\n");
-  std::vector<double> y = matrix.column(-1); // 填充第col_index-1列的数据至y // y = {0.155096, 1.077553, 0.893462}
-  for (auto i: y) printf("%f ", i);
-  printf("y\n");
+  std::vector<double> y = matrix.column(-1); // 填充最后一列class至y // y = {0.000000, 1.000000, 1.000000, 1.000000, 2.000000}
   double m, b;
   basic_linear_regression(x, y, m, b);
   double error = sum_of_squares(x, y, m, b);
