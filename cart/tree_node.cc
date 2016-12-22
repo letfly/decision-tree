@@ -1,6 +1,6 @@
 #include <cassert>
-#include "tree_node.h" // identifier 'TreeNode'
 #include "stats.h" // mode()
+#include "tree_node.h" // identifier 'TreeNode'
 #include "util.h" // join()
 
 static double MINIMUM_GAIN = 0.1;
@@ -25,8 +25,8 @@ int TreeNode::count() { // root.count() in main.cc
 }
 
 double regression_score(Matrix &matrix, int col_index) { // TreeNode::train() in tree_node.cc O(basic_linear_regression)
-  std::vector<double> x = matrix.column(col_index); // 填充第col_index列的数据至x
-  std::vector<double> y = matrix.column(-1); // 填充最后一列class至y // y = {0.000000, 1.000000, 1.000000, 1.000000, 2.000000}
+  std::vector<double> x = matrix.column(col_index); // Fill the data in the col_index column to x
+  std::vector<double> y = matrix.column(-1); // Fill the last column category to y // y = {0.000000, 1.000000, 1.000000, 1.000000, 2.000000}
   double m, b;
   basic_linear_regression(x, y, m, b);
   double error = sum_of_squares(x, y, m, b);
@@ -36,7 +36,7 @@ double regression_score(Matrix &matrix, int col_index) { // TreeNode::train() in
 void TreeNode::train(Matrix &m, std::vector<int> columns) { // root.train() in main.cc
   printf("training on %s\n", join(columns, ' ').c_str());
   // Edge cases;
-  assert(m.rows() > 0); // if wrong, stop the programming
+  assert(m.rows() > 0); // If wrong, stop the programming
   assert(m.columns() > 0);
   if (columns.size() == 0) {
     classification = mode(m.column(-1));
@@ -48,19 +48,19 @@ void TreeNode::train(Matrix &m, std::vector<int> columns) { // root.train() in m
   double error = min_error;
   for (int i = 0; i < columns.size(); ++i) {
     int column = columns[i];
-    error = regression_score(m, column); // 计算每个特征值一元线性回归
+    error = regression_score(m, column); // Calculate the linear regression for each feature
     if (error < min_error) {
       min_index = column;
       min_error = error;
     }
   }
   // Split on lowest error-column
-  double v = mean(m.column(min_index)); // 计算平均值
+  double v = mean(m.column(min_index)); // Calculate the average
   Matrix l, r;
-  m.split(min_index, v, l, r); // 取第min_index列,小于v填充至l左子树,大于至r右子树
+  m.split(min_index, v, l, r); // Take the min_index column, less than v fill to the left subtree, else fill to the right subtree
   if (l.rows()<=0 || r.rows()<=0) {
     printf("l or r: 0 rows \n");
-    classification = mode(m.column(-1)); // 预测
+    classification = mode(m.column(-1)); // Predict
     return ;
   }
   double left_error = regression_score(l, min_index);

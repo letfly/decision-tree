@@ -1,22 +1,23 @@
 #include <cstdio>
+#include "matrix.h"
 #include "stats.h"
 #include "tree_node.h"
-#include "matrix.h"
 #include "util.h"
 
 int main(int argc, char *argv[]) {
-  // 输入
+  // input
   std::string filename(argv[1]);
   std::string output_filename(argv[2]);
   Matrix m;
   m.load(filename);
 
-  // 构建决策树
+  // Model Build
   TreeNode root;
-  std::vector<int> columns = range(2); // 训练的列数
+  std::vector<int> columns = range(2); // the columns of features
   root.train(m, columns);
   printf("%d nodes in tree\n", root.count());
 
+  // Model validation
   // Analyze the results of the tree against training dataset
   int right = 0;
   int wrong = 0;
