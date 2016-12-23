@@ -4,7 +4,7 @@
 #include "util.h"
 
 ParallelForest::ParallelForest() {
-  init(100, 10);
+  init(2, 10);
   n_threads = 4;
 }
 
@@ -30,7 +30,7 @@ void ParallelForest::train(Matrix &m) {
   printf("parallel forest training %lu\n", trees.size());
 
   // 创建线程池
-  void *pool = pool_start(&training_thread, n_threads);
+  Pool *pool = pool_start(training_thread, n_threads);
   // 启动线程
   std::vector<std::vector<int> > all_subsets(trees.size());
   std::vector<int> all_columns = range(m.columns()-1);
@@ -40,7 +40,7 @@ void ParallelForest::train(Matrix &m) {
     all_subsets[i] = slice(all_columns, 0, n_features);
 
     // 创建work
-    struct Work *work = new struct Work;
+    Work *work = new struct Work;
     work->matrix = &m;
     work->tree = &tree;
     work->subset = &all_subsets[i];
@@ -49,4 +49,6 @@ void ParallelForest::train(Matrix &m) {
   }
   // 加入所有
   pool_wait(pool);
+  // 释放资源
+  pool_end(pool);
 }
