@@ -46,18 +46,19 @@ int Matrix::rows() { return elements.size(); } // TreeNode::train m.rows() in tr
  * */
 Matrix Matrix::submatrix(std::vector<int> rows, std::vector<int> columns) { // m.submatrix(r, c) in main.cc and split() in matrix.cc // O(rows_size*columns_size)
   Matrix m;
-  for (int j = 0; j < columns.size(); ++j) {
+  for (int j = 0; j < columns.size(); ++j)
     m.column_labels.push_back(column_labels[j]);
-  }
+
   for (int i = 0; i < rows.size(); ++i) {
     int y = rows[i];
     std::vector<double> row;
     m.row_labels.push_back(row_labels[y]);
     for (int j = 0; j < columns.size(); ++j) {
       int x = columns[j];
+      printf("x=%delement=%f", x, elements[y][x]);
       row.push_back(elements[y][x]);
     }
-    m.elements.push_back(elements[i]);
+    m.elements.push_back(row);
   }
   return m;
 }
@@ -78,6 +79,7 @@ void Matrix::split(int column_index, double value, Matrix &m1, Matrix &m2) { // 
     else m2_rows.push_back(i);
   }
   std::vector<int> all_cols = range(columns()); // {0, 列数-1}
+  for (auto i: m1_rows) printf("i=%dmin_index=%d", i, column_index);
   m1 = submatrix(m1_rows, all_cols); // 获取m1_rows行,all_cols列的数据 matrix[m1_rows, all_cols]
   m2 = submatrix(m2_rows, all_cols); // m2_rows={0,1,2}, all_cols={0} matrix[m2_rows, all_cols]
 }

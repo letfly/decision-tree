@@ -16,7 +16,7 @@ double sum_squared(const std::vector<double> &list) { // basic_linear_regression
 
 double mean(const std::vector<double> &list) { return sum(list)/list.size(); } // TreeNode::train() in tree_node.cc
 
-double mode(const std::vector<double> &list) { // TreeNode::train() in tree_node.cc
+double mode(const std::vector<double> &list) { // TreeNode::train() in tree_node.cc // return the most nums in list
   std::map<double, int> repeats;
   for (auto i:list)
     printf("i=%f ", i);
@@ -39,7 +39,7 @@ double covariance(const std::vector<double> &dist1, const std::vector<double> &d
   return result;
 }
 
-void basic_linear_regression(const std::vector<double> &x, const std::vector<double> &y, double &m, double &b) { // test_regression() in stats.cc and regression_score() in tree_node.cc // 一元线性回归 O(rows_size*rows_size)
+void basic_linear_regression(const std::vector<double> &x, const std::vector<double> &y, double &k, double &b) { // test_regression() in stats.cc and regression_score() in tree_node.cc // 一元线性回归 O(rows_size*rows_size)
   int length = x.size();
   double sum_x = sum(x);
   double sum_y = sum(y);
@@ -49,9 +49,9 @@ void basic_linear_regression(const std::vector<double> &x, const std::vector<dou
 
   double numerator = (cov - (sum_x*sum_y)/length);
   double denominator = ( sum_x_squared - ((sum_x*sum_x)/length) );
-  if (denominator == 0.0) m = 0.0;
-  else m = numerator/denominator;
-  b = (sum_y - m*sum_x)/length;
+  if (denominator == 0.0) k = 0.0;
+  else k = numerator/denominator;
+  b = (sum_y - k*sum_x)/length;
 }
 
 void test_regression() { // test_regression() in main.cc
@@ -63,14 +63,14 @@ void test_regression() { // test_regression() in main.cc
   y.push_back(3.0);
   y.push_back(5.0);
   y.push_back(8.0);
-  double m, b;
-  basic_linear_regression(x, y, m, b);
+  double k, b;
+  basic_linear_regression(x, y, k, b);
 }
 
-double sum_of_squares(const std::vector<double> &x, const std::vector<double> &y, double m, double b) { // regression_score() in tree_node.cc
+double sum_of_squares(const std::vector<double> &x, const std::vector<double> &y, double k, double b) { // regression_score() in tree_node.cc
   double result = 0.0;
   for (int i = 0; i < x.size(); ++i) {
-    double expected = m*x[i]+b;
+    double expected = k*x[i]+b;
     double actual = y[i];
     double difference = expected-actual;
     double squared = difference*difference;
