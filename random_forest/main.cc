@@ -26,7 +26,7 @@ double test(Classifier *c, Matrix &m) {
 void train_and_test(Matrix &matrix) {
   std::vector<Classifier*> classifiers;
   if (n_features > matrix.columns()-1 || n_features <= 0) n_features = matrix.columns()-1;
-  classifiers.push_back(new Forest(n_trees, n_features));
+  classifiers.push_back(new ParallelForest(n_trees, n_features, n_threads));
 
   for (int i = 0; i < classifiers.size(); ++i) {
     Classifier *classifier = classifiers[i];

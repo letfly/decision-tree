@@ -27,11 +27,10 @@ void *training_thread(void *void_ptr) {
 }
 
 void ParallelForest::train(Matrix &m) {
-  printf("parallel forest training %lu\n", trees.size());
-
-  // 创建线程池
-  Pool *pool = pool_start(training_thread, n_threads);
-  // 启动线程
+  printf("parallel forest training with %lu trees and %d threads\n", trees.size(), n_threads);
+  // Create thread pool
+  void *pool = pool_start(&training_thread, n_threads);
+  // Run through threads
   std::vector<std::vector<int> > all_subsets(trees.size());
   std::vector<int> all_columns = range(m.columns()-1);
   for (int i = 0; i < trees.size(); ++i) {
@@ -39,16 +38,16 @@ void ParallelForest::train(Matrix &m) {
     random_shuffle(all_columns.begin(), all_columns.end());
     all_subsets[i] = slice(all_columns, 0, n_features);
 
-    // 创建work
-    Work *work = new struct Work;
+    // Create work
+    Work *work = new Work;
     work->matrix = &m;
     work->tree = &tree;
     work->subset = &all_subsets[i];
 
-    pool_enquence(pool, work, true);
+    pool_enqueue(pool, work, true);
   }
-  // 加入所有
+  // Join on all
   pool_wait(pool);
-  // 释放资源
+  // Free resources
   pool_end(pool);
 }
