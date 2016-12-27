@@ -13,16 +13,18 @@ ParallelForest::ParallelForest(int n_trees, int n_features, int n_threads) {
   init(n_trees, n_features);
 }
 
-struct Work {
+struct Task {
   Matrix *matrix;
   TreeNode *tree;
   std::vector<int> *subset;
 };
 
+int done = 0;
 void *training_thread(void *void_ptr) {
   printf("training_thread...");
-  Work *work = (Work*)void_ptr;
-  work->tree->train(*work->matrix, *work->subset);
+  Task *task = (Task*)void_ptr;
+  task->tree->train(*task->matrix, *task->subset);
+  ++done;
   return NULL;
 }
 
@@ -38,16 +40,17 @@ void ParallelForest::train(Matrix &m) {
     random_shuffle(all_columns.begin(), all_columns.end());
     all_subsets[i] = slice(all_columns, 0, n_features);
 
-    // Create work
-    Work *work = new Work;
-    work->matrix = &m;
-    work->tree = &tree;
-    work->subset = &all_subsets[i];
+    // Create task
+    Task *task = new Task;
+    task->matrix = &m;
+    task->tree = &tree;
+    task->subset = &all_subsets[i];
 
-    pool_enqueue(pool, work, true);
+    pool_enqueue(pool, task, true);
   }
   // Join on all
   pool_wait(pool);
   // Free resources
   pool_end(pool);
+  printf("done = %d", done);
 }
