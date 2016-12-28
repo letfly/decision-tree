@@ -94,6 +94,14 @@ std::vector<double> &Matrix::operator[](int i) { // std::vector<double> $row = m
   return elements[i];
 }
 
+// This function returns a shuffled version of the Matrix
+Matrix Matrix::shuffled() {
+  std::vector<int> row_indices = range(rows());
+  random_shuffle(row_indices.begin(), row_indices.end());
+  std::vector<int> column_indices = range(columns());
+  return submatrix(row_indices, column_indices);
+}
+
 std::vector<double> Matrix::column(int index) { // regression_score() matrix.column(col_index) in tree_node.cc // O(elements.size())
   std::vector<double> result;
   if (index < 0) index += columns();
@@ -102,4 +110,41 @@ std::vector<double> Matrix::column(int index) { // regression_score() matrix.col
     result.push_back(element);
   }
   return result;
+}
+
+// Add rows from other Matrix to this Matrix
+void Matrix::merge_rows(Matrix &other) {
+  if (columns() == 0) column_labels = other.column_labels;
+  assert(columns()==other.columns() || rows()==0);
+  for (int i = 0; i < other.rows(); ++i) {
+    std::vector<double> &row = other.elements[i];
+    elements.push_back(row);
+    row_labels.push_back(other.row_labels[i]);
+  }
+}
+
+// Append a column to the right side of the Matrix
+// Mutable
+void Matrix::append_column(std::vector<double> &col, std::string name) {
+  assert(col.size() == rows());
+  column_labels.push_back(name);
+  for (int i = 0; i < col.size(); ++i) {
+    double value = col[i];
+    elements[i].push_back(value);
+  }
+}
+
+void Matrix::save(std::string filename) {
+  std::ofstream file(filename.c_str());
+  // Write column header
+  if (column_labels.size() > 0) file << join(column_labels, '\t');
+  file << std::endl;
+  // Write elements
+  for (int i = 0; i < elements.size(); ++i) {
+    std::vector<double> &row = elements[i];
+    if (row_labels.size() > 0) file << row_labels[i] << '\t';
+    file << join(row, '\t');
+    file << std::endl;
+  }
+  file.close();
 }

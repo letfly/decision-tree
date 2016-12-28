@@ -54,3 +54,8 @@ std::vector<T> inline slice(std::vector<T> list, int start=0, int end=-1, int st
   }
   return result;
 }
+
+std::vector<int> inline merge(std::vector<int> a, std::vector<int> b) {
+  for (int i = 0; i < b.size(); ++i) a.push_back(b[i]);
+  return a;
+}

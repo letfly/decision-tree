@@ -16,6 +16,10 @@ class Matrix {
   std::vector<double> column(int index);
   Matrix submatrix(std::vector<int> rows, std::vector<int> columns);
   void split(int column_index, double value, Matrix &m1, Matrix &m2);
+  Matrix shuffled();
+  void merge_rows(Matrix &other);
+  void append_column(std::vector<double> &col, std::string name="");
+  void save(std::string filename);
   // Bracket overloaded operator:
   std::vector<double> &operator[](int i);
 };
