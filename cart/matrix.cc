@@ -17,8 +17,8 @@ void Matrix::load(std::string filename, bool use_column_labels, bool use_row_lab
       ++line_number;
       continue;
     }
-    if (use_column_labels && line_number==0) { // 移除第一行字段名
-      column_labels = tokens; // 填充第一行字段名至列表签 column_labels
+    if (use_column_labels && line_number==0) { // Removes the first row of field names
+      column_labels = tokens; // Fill in the first line of the field name to column_labels
       ++line_number;
       continue;
     } else {
@@ -55,7 +55,7 @@ Matrix Matrix::submatrix(std::vector<int> rows, std::vector<int> columns) { // m
     m.row_labels.push_back(row_labels[y]);
     for (int j = 0; j < columns.size(); ++j) {
       int x = columns[j];
-      printf("x=%delement=%f", x, elements[y][x]);
+      printf("y=%dx=%delement=%f", y, x, elements[y][x]);
       row.push_back(elements[y][x]);
     }
     m.elements.push_back(row);
@@ -78,9 +78,9 @@ void Matrix::split(int column_index, double value, Matrix &m1, Matrix &m2) { // 
     if (element < value) m1_rows.push_back(i);
     else m2_rows.push_back(i);
   }
-  std::vector<int> all_cols = range(columns()); // {0, 列数-1}
+  std::vector<int> all_cols = range(columns()); // {0, cols-1}
   for (auto i: m1_rows) printf("i=%dmin_index=%d", i, column_index);
-  m1 = submatrix(m1_rows, all_cols); // 获取m1_rows行,all_cols列的数据 matrix[m1_rows, all_cols]
+  m1 = submatrix(m1_rows, all_cols); // Take the m1_rows row, all_cols column of data: matrix[m1_rows, all_cols]
   m2 = submatrix(m2_rows, all_cols); // m2_rows={0,1,2}, all_cols={0} matrix[m2_rows, all_cols]
 }
 
@@ -124,27 +124,26 @@ void Matrix::merge_rows(Matrix &other) {
 }
 
 // Append a column to the right side of the Matrix
-// Mutable
-void Matrix::append_column(std::vector<double> &col, std::string name) {
+void Matrix::append_column(std::vector<double> &col) {
   assert(col.size() == rows());
-  column_labels.push_back(name);
   for (int i = 0; i < col.size(); ++i) {
     double value = col[i];
     elements[i].push_back(value);
   }
 }
 
-void Matrix::save(std::string filename) {
+void Matrix::save(std::string filename, std::string name) {
   std::ofstream file(filename.c_str());
   // Write column header
-  if (column_labels.size() > 0) file << join(column_labels, '\t');
-  file << std::endl;
+  column_labels.push_back(name);
+  if (column_labels.size() > 0) file << join(column_labels, ',');
+  file << '\n';
   // Write elements
   for (int i = 0; i < elements.size(); ++i) {
     std::vector<double> &row = elements[i];
-    if (row_labels.size() > 0) file << row_labels[i] << '\t';
-    file << join(row, '\t');
-    file << std::endl;
+    if (row_labels.size() > 0) file << row_labels[i] << ',';
+    file << join(row, ',');
+    file << '\n';
   }
   file.close();
 }

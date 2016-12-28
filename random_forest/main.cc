@@ -27,7 +27,7 @@ double test(Classifier *c, Matrix &m, std::vector<int> &classes) {
   printf("percent=%f\n", percent);
   return percent;
 }
-void train_only(Matrix &matrix) {
+void train_one(Matrix &matrix) {
   std::vector<Classifier*> classifiers;
   std::vector<int> classes;
   if (n_features > matrix.columns()-1 || n_features <= 0) n_features = matrix.columns()-1;
@@ -49,13 +49,13 @@ double train_and_test(Matrix &train, Matrix &testing) {
   double percent = test(classifier, testing, classes);
   printf("%f%% correct\n", percent);
   std::vector<double> class_doubles(classes.begin(), classes.end());
-  testing.append_column(class_doubles, "Class");
+  testing.append_column(class_doubles);
 
   return percent;
 }
 void folded_train_and_test(Matrix &input_matrix, int n_folds, std::string &filename) {
   Matrix result;
-  Matrix matrix = input_matrix.shuffled();
+  Matrix matrix = input_matrix;//.shuffled();
   int R = matrix.rows();
   int N = R/n_folds;
   std::vector<int> all_columns = range(0, matrix.columns());
@@ -72,6 +72,7 @@ void folded_train_and_test(Matrix &input_matrix, int n_folds, std::string &filen
     else if (i < n_folds-1) training_rows = merge(range(0, i*N), range((i+1)*N, R));
     // Last fold
     else training_rows = range(0, R-N);
+    for (auto i: training_rows) printf("t_r=%d,R=%d,N=%d\n", i, R, N);
     Matrix training = matrix.submatrix(training_rows, all_columns);
     // Get testing subset
     std::vector<int> testing_rows = range(i*N, (i+1)*N);
@@ -93,7 +94,7 @@ void folded_train_and_test(Matrix &input_matrix, int n_folds, std::string &filen
   printf("%lu\t%lu\n", rows.size(), cols.size());
   printf("%d\t%d\n", result.rows(), result.columns());
   Matrix sub = result.submatrix(rows, cols);
-  sub.save(filename.c_str());
+  sub.save(filename.c_str(), "Class");
 }
 
 int main(int argc, char *argv[]) {
@@ -121,8 +122,8 @@ int main(int argc, char *argv[]) {
   printf("%d rows and %d columns", m.rows(), m.columns());
 
   // Model build and Output
-  //train_only(m);
-  folded_train_and_test(m, 10, save_file);
+  //train_one(m);
+  folded_train_and_test(m, 2, save_file);
 
   return 0;
 }
