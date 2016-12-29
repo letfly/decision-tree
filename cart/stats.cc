@@ -18,8 +18,6 @@ double mean(const std::vector<double> &list) { return sum(list)/list.size(); } /
 
 double mode(const std::vector<double> &list) { // TreeNode::train() in tree_node.cc // return the most nums in list
   std::map<double, int> repeats;
-  for (auto i:list)
-    printf("i=%f ", i);
   for (int i =0; i < list.size(); ++i) {
     double value = list[i];
     if (repeats.find(value) == repeats.end()) repeats[value] = 1;
@@ -29,7 +27,7 @@ double mode(const std::vector<double> &list) { // TreeNode::train() in tree_node
   auto max = max_element(repeats.begin(), repeats.end(),
     [](const std::pair<double, int> &p1, const std::pair<double, int> &p2) { return p1.second<p2.second; }
   );
-  printf("max=%f \n", (*max).first);
+  //printf("max=%f \n", (*max).first);
   return (*max).first;
 }
 

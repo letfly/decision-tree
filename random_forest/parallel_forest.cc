@@ -19,17 +19,14 @@ struct Task {
   std::vector<int> *subset;
 };
 
-int done = 0;
 void *training_thread(void *void_ptr) {
-  printf("training_thread...");
   Task *task = (Task*)void_ptr;
   task->tree->train(*task->matrix, *task->subset);
-  ++done;
   return NULL;
 }
 
 void ParallelForest::train(Matrix &m) {
-  printf("parallel forest training with %lu trees and %d threads\n", trees.size(), n_threads);
+  //printf("parallel forest training with %lu trees and %d threads\n", trees.size(), n_threads);
   // Create thread pool
   void *pool = pool_start(&training_thread, n_threads);
   // Run through threads
@@ -52,5 +49,4 @@ void ParallelForest::train(Matrix &m) {
   pool_wait(pool);
   // Free resources
   pool_end(pool);
-  printf("done = %d", done);
 }

@@ -13,7 +13,7 @@ void Matrix::load(std::string filename, bool use_column_labels, bool use_row_lab
   while (getline(file, line)) {
     std::vector<std::string> tokens = split_string(line, ",");
     if (tokens.size() == 0) {
-      printf("Matrix.load(): skipping blank line on line #%d\n", line_number);
+      //printf("Matrix.load(): skipping blank line on line #%d\n", line_number);
       ++line_number;
       continue;
     }
@@ -55,7 +55,7 @@ Matrix Matrix::submatrix(std::vector<int> rows, std::vector<int> columns) { // m
     m.row_labels.push_back(row_labels[y]);
     for (int j = 0; j < columns.size(); ++j) {
       int x = columns[j];
-      printf("y=%dx=%delement=%f", y, x, elements[y][x]);
+      //printf("y=%dx=%delement=%f", y, x, elements[y][x]);
       row.push_back(elements[y][x]);
     }
     m.elements.push_back(row);
@@ -79,7 +79,7 @@ void Matrix::split(int column_index, double value, Matrix &m1, Matrix &m2) { // 
     else m2_rows.push_back(i);
   }
   std::vector<int> all_cols = range(columns()); // {0, cols-1}
-  for (auto i: m1_rows) printf("i=%dmin_index=%d", i, column_index);
+  //for (auto i: m1_rows) printf("i=%dmin_index=%d", i, column_index);
   m1 = submatrix(m1_rows, all_cols); // Take the m1_rows row, all_cols column of data: matrix[m1_rows, all_cols]
   m2 = submatrix(m2_rows, all_cols); // m2_rows={0,1,2}, all_cols={0} matrix[m2_rows, all_cols]
 }
