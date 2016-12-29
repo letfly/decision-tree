@@ -101,11 +101,11 @@ int main(int argc, char *argv[]) {
   // Input
   char *cvalue = NULL;
   int c;
-  std::string train_file, save_file;
+  std::string train_file, result_file;
   while ((c = getopt(argc, argv, "t:s:c:p:n:f:m:")) != -1) {
     switch(c) {
       case 't': train_file = optarg; break;// Train file
-      case 's': save_file = optarg; break;// Train file
+      case 's': result_file = optarg; break;// Train file
       case 'c': break; // Pridict category
       case 'p': n_threads = atoi(optarg); break;
       case 'n': n_trees = atoi(optarg); // The nums of threads
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 
   // Model build and Output
   //train_one(m);
-  folded_train_and_test(m, 2, save_file);
+  folded_train_and_test(m, 2, result_file);
 
   return 0;
 }
