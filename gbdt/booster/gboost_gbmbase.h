@@ -29,6 +29,21 @@ namespace booster{
  *      ensembles the boosters together;
  *  (2) GBMBaseModel provides prediction buffering scheme to speedup training;
  *  (3) Summary: GBMBaseModel is a standard wrapper for boosting ensembles;
+ *
+ * Usage of this class, the number index gives calling dependencies:
+ *  (1) model.SetParam to set the parameters
+ *  (2) model.LoadModel to load old models or model.InitModel to create a new model
+ *  (3) model.InitTrainer before calling model.Predict and model.DoBoost
+ *  (4) model.Predict to get predictions given a instance
+ *  (5) model.DoBoost to update the ensembles, add new booster to the model
+ *  (6) model.SaveModel to save learned results
+ *
+ * Bufferring: each instance comes with a buffer_index in Predict.
+ *             when param.num_pbuffer != 0, a unique buffer index can be
+ *             assigned to each instance to buffer previous results of boosters,
+ *             this helps to speedup training, so consider assign bufer_index
+ *             for each training instances, if buffer_index = -1, the code
+ *             recalculate things from scratch and will still works correctly
  */
 class BaseGBMModel{
  public:
@@ -209,7 +224,8 @@ class BaseGBMModel{
 
     // load buffered results if any
     if (param.do_reboost==0 && buffer_index>=0) {
-      utils::Assert(buffer_index < param.num_pbuffer, "buffer index exceed num_pbuffer");
+      utils::Assert(buffer_index < param.num_pbuffer,
+                    "buffer index exceed num_pbuffer");
       istart = this->pred_counter[buffer_index];
       psum   = this->pred_buffer [buffer_index];
     }
