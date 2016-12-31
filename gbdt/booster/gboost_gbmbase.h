@@ -45,7 +45,7 @@ namespace booster{
  *             for each training instances, if buffer_index = -1, the code
  *             recalculate things from scratch and will still works correctly
  */
-class BaseGBMModel{
+class GBMBaseModel{
  public:
   /** \brief model parameters */
   struct Param{
@@ -90,7 +90,7 @@ class BaseGBMModel{
   };
  public:
   /** \brief destructor */
-  virtual ~BaseGBMModel(void) { this->FreeSpace(); }
+  virtual ~GBMBaseModel(void) { this->FreeSpace(); }
   /**
    * \brief set parameters from outside
    * \param name name of the parameter
