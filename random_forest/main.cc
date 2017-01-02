@@ -1,14 +1,12 @@
-#include <cassert> // assert
-#include <cstdio>
+#include <cassert> // atoi, assert, exit
+#include <cstdio> // printf
+#include <string> // string
 #include <unistd.h> // getopt, optarg
-#include "matrix.h"
-#include "stats.h"
-#include "tree_node.h"
-#include "util.h"
-#include "forest.h"
-#include "parallel_forest.h"
+#include "matrix.h" // Matrix
+#include "parallel_forest.h" // ParallelForest
+#include "util.h" // range
 
-int n_trees, n_threads, n_features;
+int n_threads, n_trees, n_features;
 double test(Classifier *c, Matrix &m, std::vector<int> &classes) {
   classes.empty();
   // Analyze the results of the tree against training dataset
@@ -18,16 +16,14 @@ double test(Classifier *c, Matrix &m, std::vector<int> &classes) {
     std::vector<double> &row = m[i];
     int actual_class = row[row.size()-1];
     int predict_class = c->classify(row);
-    printf("predict=%dactual=%d", predict_class, actual_class);
     classes.push_back(actual_class);
     if (predict_class == actual_class) ++right;
     else ++wrong;
   }
   double percent = right*100.0/m.rows();
-  printf("percent=%f\n", percent);
   return percent;
 }
-void train_one(Matrix &matrix) {
+void train_only(Matrix &matrix) {
   std::vector<Classifier*> classifiers;
   std::vector<int> classes;
   if (n_features > matrix.columns()-1 || n_features <= 0) n_features = matrix.columns()-1;
@@ -53,7 +49,7 @@ double train_and_test(Matrix &train, Matrix &testing) {
 
   return percent;
 }
-void folded_train_and_test(Matrix &input_matrix, int n_folds, std::string &filename) {
+void folded_train_and_test(Matrix &input_matrix, int n_folds, std::string &test_file, std::string &result_file) { // n_folds = total/test
   Matrix result;
   Matrix matrix = input_matrix;//.shuffled();
   int R = matrix.rows();
@@ -72,7 +68,7 @@ void folded_train_and_test(Matrix &input_matrix, int n_folds, std::string &filen
     else if (i < n_folds-1) training_rows = merge(range(0, i*N), range((i+1)*N, R));
     // Last fold
     else training_rows = range(0, R-N);
-    for (auto i: training_rows) printf("t_r=%d,R=%d,N=%d\n", i, R, N);
+    //for (auto i: training_rows) printf("t_r=%d,R=%d,N=%d\n", i, R, N);
     Matrix training = matrix.submatrix(training_rows, all_columns);
     // Get testing subset
     std::vector<int> testing_rows = range(i*N, (i+1)*N);
@@ -81,7 +77,7 @@ void folded_train_and_test(Matrix &input_matrix, int n_folds, std::string &filen
     Matrix testing = matrix.submatrix(testing_rows, all_columns);
     // Test
     total_percent += train_and_test(training, testing);
-    printf("n_f=%dt_p=%f\n", i, total_percent);
+    //printf("n_f=%dt_p=%f\n", i, total_percent);
     // Store results (classID is in testing)
     result.merge_rows(testing);
   }
@@ -94,18 +90,18 @@ void folded_train_and_test(Matrix &input_matrix, int n_folds, std::string &filen
   printf("%lu\t%lu\n", rows.size(), cols.size());
   printf("%d\t%d\n", result.rows(), result.columns());
   Matrix sub = result.submatrix(rows, cols);
-  sub.save(filename.c_str(), "Class");
+  sub.save(result_file.c_str(), "Class");
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
   // Input
-  char *cvalue = NULL;
   int c;
-  std::string train_file, result_file;
-  while ((c = getopt(argc, argv, "t:s:c:p:n:f:m:")) != -1) {
-    switch(c) {
-      case 't': train_file = optarg; break;// Train file
-      case 's': result_file = optarg; break;// Train file
+  std::string train_file, test_file, result_file;
+  while ((c = getopt(argc, argv, "t:s:r:c:p:n:f:m:")) != -1) {
+    switch (c) {
+      case 't': train_file = optarg; break; // Train file
+      case 's': test_file = optarg; break; // Test file
+      case 'r': result_file = optarg; break; // Result file
       case 'c': break; // Pridict category
       case 'p': n_threads = atoi(optarg); break;
       case 'n': n_trees = atoi(optarg); // The nums of threads
@@ -119,11 +115,11 @@ int main(int argc, char *argv[]) {
   if (n_threads <= 0) n_threads = 16;
   Matrix m;
   m.load(train_file);
-  printf("%d rows and %d columns", m.rows(), m.columns());
+  printf("\n\n%d rows and %d columns\n", m.rows(), m.columns());
 
   // Model build and Output
-  //train_one(m);
-  folded_train_and_test(m, 2, result_file);
+  //train_only(m)=train_and_test(m, m);
+  folded_train_and_test(m, 2, test_file, result_file);
 
   return 0;
 }
