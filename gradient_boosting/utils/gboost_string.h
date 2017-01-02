@@ -1,3 +1,5 @@
+#ifndef GBOOST_STRING_H_
+#define GBOOST_STRING_H_
 namespace gboost {
 namespace utils {
 class StringProcessing {
@@ -9,3 +11,4 @@ class StringProcessing {
 };
 }
 }
+#endif

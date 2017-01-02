@@ -6,9 +6,29 @@
 #include "utils/gboost_config.h" // ConfigIterator, Assert
 #include "utils/gboost_string.h" // StringProcessing
 
-namespace gboost{
-namespace regression{
-class RegBoostTest{
+namespace gboost {
+namespace regression {
+class RegBoostTest {
+ private:
+  struct TestParam{
+    int boost_iterations;
+    int save_period;
+    char model_dir_path[256];
+    char pred_dir_path[256];
+
+    std::vector<std::string> test_paths;
+    std::vector<std::string> test_names;
+
+    inline void SetParam(const char *name, const char *val) {
+      if (!strcmp("model_dir_path", name)) strcpy(model_dir_path, val);
+      if (!strcmp("pred_dir_path", name)) strcpy(pred_dir_path, val);
+      if (!strcmp("test_paths", name)) test_paths = utils::StringProcessing::split(val, ';');
+      if (!strcmp("test_names", name)) test_names = utils::StringProcessing::split(val, ';');
+    }
+  };
+
+  TestParam test_param;
+  RegBoostLearner *reg_boost_learner;
  public:
   void test(char *config_path, bool silent = false) {
     reg_boost_learner = new RegBoostLearner();
@@ -37,26 +57,6 @@ class RegBoostTest{
       reg_boost_learner->Predict(preds, test_data);
     }
   }
- private:
-  struct TestParam{
-    int boost_iterations;
-    int save_period;
-    char model_dir_path[256];
-    char pred_dir_path[256];
-
-    std::vector<std::string> test_paths;
-    std::vector<std::string> test_names;
-
-    inline void SetParam(const char *name, const char *val) {
-      if (!strcmp("model_dir_path", name)) strcpy(model_dir_path, val);
-      if (!strcmp("pred_dir_path", name)) strcpy(pred_dir_path, val);
-      if (!strcmp("test_paths", name)) test_paths = utils::StringProcessing::split(val, ';');
-      if (!strcmp("test_names", name)) test_names = utils::StringProcessing::split(val, ';');
-    }
-  };
-
-  TestParam test_param;
-  gboost::regression::RegBoostLearner *reg_boost_learner;
 };
 }
 }

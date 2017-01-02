@@ -1,4 +1,4 @@
-#include "gboost_reg_test.h"
+#include "regression/gboost_reg_test.h"
 
 int main(int argc, char **argv) {
   char *config_path = "demo/regression/reg.conf";
