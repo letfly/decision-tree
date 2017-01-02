@@ -1,14 +1,13 @@
-#ifndef _GBOOST_STREAM_H_
-#define _GBOOST_STREAM_H_
+#ifndef GBOOST_STREAM_H_
+#define GBOOST_STREAM_H_
 
 #include <cstdio>
 /**
  * \file gboost_stream.h
  * \brief general stream interface for serialization
- * \author Yufan Fu: letflykid@gmail.com
  */
-namespace gboost{
-namespace utils{
+namespace gboost {
+namespace utils {
 /** \brief interface of stream I/O, used to serialize model */
 class IStream{
  public:
@@ -38,6 +37,6 @@ class FileStream: public IStream {
   virtual void Write(const void *ptr, size_t size) { fwrite(ptr, size, 1, fp); }
   inline void Close(void) { fclose(fp); }
 };
-};
-};
+}
+}
 #endif

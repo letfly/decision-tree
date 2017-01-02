@@ -1,15 +1,15 @@
-#ifndef _GBOOST_H_
-#define _GBOOST_H_
+#ifndef GBOOST_H_
+#define GBOOST_H_
 /**
  * \file gboost.h
  * \brief the general gradient boosting interface
  * \author Yufan Fu: letflykid@gmail.com
  */
 #include <vector>
-#include "../utils/gboost_utils.h"
-#include "../utils/gboost_stream.h"
-#include "../utils/gboost_config.h"
-#include "gboost_data.h"
+#include "booster/gboost_data.h"
+#include "utils/gboost_utils.h"
+#include "utils/gboost_stream.h"
+#include "utils/gboost_config.h"
 
 /** \brief namespace for gboost package* */
 namespace gboost{
@@ -94,8 +94,8 @@ class IBooster{
   /** \brief virtual destructor */
   virtual ~IBooster(void) {}
 };
-};
-};
+}
+}
 
 namespace gboost{
 namespace booster{

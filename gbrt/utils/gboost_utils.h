@@ -1,12 +1,11 @@
-#ifndef _GBOOST_UTILS_H_
-#define _GBOOST_UTILS_H_
+#ifndef GBOOST_UTILS_H_
+#define GBOOST_UTILS_H_
 /**
  * \file gboost_utils.h
  * \brief simple utils to support the code
- * \author Yufan Fu: letflykid@gmail.com
  */
-#define _CRT_SECURE_NO_WARNINGS
-#ifndef _MSC_VER
+#define CRT_SECURE_NO_WARNINGS
+#ifndef MSC_VER
 #define fopen64 fopen
 #else
 
@@ -54,7 +53,7 @@ inline FILE *FopenCheck(const char *fname, const char *flag) {
   }
   return fp;
 }
-};
-};
+}
+}
 
 #endif

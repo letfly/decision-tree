@@ -1,18 +1,17 @@
-#ifndef _GBOOST_CONFIG_H_
-#define _GBOOST_CONFIG_H_
+#ifndef GBOOST_CONFIG_H_
+#define GBOOST_CONFIG_H_
 /**
  * \file gboost_config.h
  * \brief helper class to load in configures from file
- * \author Yufan Fu: letflykid@gmail.com
  */
-#define _CRT_SECURE_NO_WARNINGS
+#define CRT_SECURE_NO_WARNINGS
 #include <cstdio>
 #include <cstring>
 #include <string>
-#include "gboost_utils.h"
+#include "utils/gboost_utils.h"
 
-namespace gboost{
-namespace utils{
+namespace gboost {
+namespace utils {
 /**
  * \brief an iterator that iterates over a configure file and gets the configures
  */
@@ -115,10 +114,10 @@ class ConfigIterator{
     return true;
   }
 };
-};
+}
 
 
-namespace utils{
+namespace utils {
 /**
  * \brief a class that save parameter configurations
  *        temporally and allows to get them out later
@@ -198,6 +197,6 @@ class ConfigSaver{
   std::vector<std::string> values_high;
   size_t idx;
 };
-};
-};
+}
+}
 #endif

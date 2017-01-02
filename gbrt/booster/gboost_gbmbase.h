@@ -1,9 +1,9 @@
-#ifndef _GBOOST_BASE_MODEL_H_
-#define _GBOOST_BASE_MODEL_H_
+#ifndef GBOOST_BASE_MODEL_H_
+#define GBOOST_BASE_MODEL_H_
 
 #include <cstring>
-#include "../utils/gboost_config.h"
-#include "gboost.h"
+#include "booster/gboost.h"
+#include "utils/gboost_config.h"
 /**
  * \file gboost_base_model.h
  * \brief a base model class,
@@ -280,6 +280,6 @@ class GBMBaseModel{
   /** \brief configurations saved for each booster */
   utils::ConfigSaver cfg;
 };
-};
-};
+}
+}
 #endif

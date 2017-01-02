@@ -6,9 +6,8 @@
  *        this file is adapted from GBRT implementation in SVDFeature project
  */
 #include <algorithm>
-#include "gboost_tree_model.h"
-#include "../../utils/gboost_random.h"
-#include "../../utils/gboost_matrix_csr.h"
+#include "utils/gboost_random.h"
+#include "utils/gboost_matrix_csr.h"
 
 namespace gboost{
 namespace booster{
@@ -294,6 +293,6 @@ namespace booster{
       }
     }
   };
-};
-};
+}
+}
 #endif

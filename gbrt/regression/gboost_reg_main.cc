@@ -1,4 +1,3 @@
-#include "gboost_reg_train.h"
 #include "gboost_reg_test.h"
 
 int main(int argc, char **argv) {

@@ -25,3 +25,12 @@ make
     - use 1000 trees in the forest
 - -f 30
     - use a subset of 30 features for each tree
+
+## Gbrt
+### Running the program
+```
+cd gbrt
+make
+```
+### Required Parameters
+### Optional Parameters

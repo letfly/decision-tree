@@ -1,5 +1,5 @@
-#ifndef _GBOOST_DATA_H_
-#define _GBOOST_DATA_H_
+#ifndef GBOOST_DATA_H_
+#define GBOOST_DATA_H_
 
 /**
  * \file gboost_data.h
@@ -7,7 +7,7 @@
  * \author Yufan Fu: letflykid@gmail.com
  */
 #include <vector>
-#include "../utils/gboost_utils.h"
+#include "utils/gboost_utils.h"
 
 namespace gboost{
 namespace booster{
@@ -19,8 +19,8 @@ namespace booster{
   typedef float bst_float;
   /** \brief debug option for booster */
   const bool bst_debug = false;
-};
-};
+}
+}
 namespace gboost{
 namespace booster{
 /**
@@ -125,7 +125,7 @@ class FMatrixS{
     return sp;
   }
 };
-};
-};
+}
+}
 
 #endif
