@@ -3,7 +3,8 @@
 namespace gboost {
 namespace regression {
   struct DMatrix {
-    inline void LoadText(const char *fname, bool silent = false) {}
+    inline void LoadText(const char *fname, bool silent = false) {
+    }
   };
 }
 }

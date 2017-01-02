@@ -26,10 +26,10 @@ make
 - -f 30
     - use a subset of 30 features for each tree
 
-## Gbrt
+## Gradient boosting regression tree
 ### Running the program
 ```
-cd gbrt
+cd gradient_boosting
 make
 ```
 ### Required Parameters

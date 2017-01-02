@@ -1,9 +1,16 @@
-#include "regression/gboost_reg_test.h"
+#include "regression/gboost_reg_train.h"
 
 int main(int argc, char **argv) {
+  // Input
   char *config_path = "demo/regression/reg.conf";
-  //gboost::regression::RegBoostTrain train;
-  gboost::regression::RegBoostTest test;
-  //train.train(config_path, false);
-  test.test(config_path, false);
+  printf("dd");
+
+  // Model build
+  gboost::regression::RegBoostTrain train;
+
+  // Output
+  train.train(config_path, false);
+  //gboost::regression::RegBoostTest test;
+  //test.test(config_path, false);
+  return 0;
 }

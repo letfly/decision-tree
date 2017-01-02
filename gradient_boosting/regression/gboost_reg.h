@@ -11,6 +11,13 @@ class RegBoostLearner {
   inline void InitModel(void) {}
   inline void LoadModel(utils::IStream &fi) {}
   inline void Predict(std::vector<float> &preds, const DMatrix &data) {}
+  inline void SetData(const DMatrix *train,
+                      std::vector<const DMatrix *> evals,
+                      std::vector<std::string> evname) {
+  }
+  inline void InitTrainer(void) {}
+  inline void UpdateOneIter(int iteration) {}
+  inline void SaveModel(utils::IStream &fo) {}
 };
 }
 }
