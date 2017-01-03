@@ -26,7 +26,7 @@ make
 - -f 30
     - use a subset of 30 features for each tree
 
-## Gradient boosting regression tree
+## Gradient Boosting Regression Tree
 ### Running the program
 ```
 cd gradient_boosting

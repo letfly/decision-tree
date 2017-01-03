@@ -18,7 +18,7 @@ class ConfigIterator{
   FILE *fi;
   char ch_buf;
   char s_name[256], s_buf[246], s_val[256];
-  inline void SkipLine() {           
+  inline void SkipLine() {
     do{
       ch_buf = fgetc(fi);
     } while (ch_buf!=EOF && ch_buf!='\n' && ch_buf!='\r');
@@ -86,16 +86,6 @@ class ConfigIterator{
   /** \brief destructor */
   ~ConfigIterator() {}
   /**
-   * \brief get current name, called after Next returns true
-   * \return current parameter name
-   */
-  inline const char *name(void)const { return s_name; }
-  /**
-   * \brief get current value, called after Next returns true
-   * \return current parameter value
-   */
-  inline const char *val(void)const { return s_val; }
-  /**
    * \brief move iterator to next position
    * \return true if there is value in next position
    */
@@ -109,57 +99,16 @@ class ConfigIterator{
     }
     return false;
   }
-};
-}
-
-
-namespace utils {
-/**
- * \brief a class that save parameter configurations
- *        temporally and allows to get them out later
- *        there are two kinds of priority in ConfigSaver
- */
-class ConfigSaver{
- private:
-  std::vector<std::string> names;
-  std::vector<std::string> values;
-  std::vector<std::string> names_high;
-  std::vector<std::string> values_high;
-  size_t idx;
- public:
-  /** \brief constructor */
-  ConfigSaver(void) { idx = 0; }
-  /** \brief set pointer to beginning of the ConfigSaver */
-  inline void BeforeFirst(void) { idx = 0; }
-  /**
-   * \brief move iterator to next position
-   * \return true if there is value in Next position
-   */
-  inline bool Next(void) {
-    if(idx >= (names.size()+names_high.size())) return false;
-    ++idx;
-    return true;
-  }
   /**
    * \brief get current name, called after Next returns true
    * \return current parameter name
    */
-  inline const char *name(void) const {
-    Assert(idx > 0, "can't call name before first");
-    size_t i = idx - 1;
-    if(i >= names.size()) return names_high[i - names.size()].c_str();
-    else return names[i].c_str();
-  }
+  inline const char *name(void)const { return s_name; }
   /**
    * \brief get current value, called after Next returns true
    * \return current parameter value
    */
-  inline const char *val(void)const {
-    Assert(idx > 0, "can't call name before first");
-    size_t i = idx - 1;
-    if(i >= values.size()) return values_high[i - values.size()].c_str();
-    else return values[i].c_str();
-  }
+  inline const char *val(void)const { return s_val; }
 };
 }
 }
