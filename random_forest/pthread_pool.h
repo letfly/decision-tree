@@ -1,8 +1,8 @@
 /** \file
  * This file provides prototypes for an implementation of a pthread pool.
  */
-#ifndef PTHREAD_POOL_H
-#define PTHREAD_POOL_H
+#ifndef PTHREAD_POOL_H_
+#define PTHREAD_POOL_H_
 
 /**
  * Create a new thread pool.

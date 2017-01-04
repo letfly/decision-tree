@@ -1,8 +1,6 @@
-#ifndef FOREST_H
-#define FOREST_H
-#include "classifier.h"
-#include "matrix.h"
-#include "tree_node.h"
+#ifndef FOREST_H_
+#define FOREST_H_
+#include "cart/tree_node.h" // Classifier, TreeNode, Matrix
 
 class Forest : public Classifier {
  protected:

@@ -1,8 +1,7 @@
 #include <cstdio>
-#include "matrix.h"
-#include "stats.h"
-#include "tree_node.h"
-#include "util.h"
+#include "cart/matrix.h" // Matrix, load, rows, columns, operator
+#include "cart/tree_node.h" // TreeNode, train, count, classify
+#include "cart/util.h" // range
 
 int main(int argc, char *argv[]) {
   // Input
@@ -10,12 +9,13 @@ int main(int argc, char *argv[]) {
   std::string output_filename(argv[2]);
   Matrix m;
   m.load(filename);
+  printf("\n\n%d rows and %d columns\n", m.rows(), m.columns());
 
   // Model build
-  TreeNode root;
+  TreeNode tree;
   std::vector<int> columns = range(2); // the columns of features
-  root.train(m, columns);
-  printf("%d nodes in tree\n", root.count());
+  tree.train(m, columns);
+  printf("%d nodes in tree\n", tree.count());
 
   // Output:Model validation
   // Analyze the results of the tree against training dataset
@@ -23,14 +23,14 @@ int main(int argc, char *argv[]) {
   int wrong = 0;
   for (int i = 0; i < m.rows(); ++i) {
     std::vector<double> &row = m[i];
-    int actual_class = root.classify(row);
+    int actual_class = tree.classify(row);
     int expected_class = row[row.size()-1];
     if (actual_class == expected_class) ++right;
     else ++wrong;
   }
   // Evaluate results against original training set
   double percent = right*100.0/m.rows();
-  printf("training set recovered: %f%%\n", percent);
+  printf("train set correct: %f%%\n", percent);
 
   return 0;
 }

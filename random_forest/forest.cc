@@ -1,7 +1,7 @@
 #include <cstdio>
-#include "forest.h"
-#include "stats.h"
-#include "util.h" // range(), slice()
+#include "cart/stats.h" // mode
+#include "cart/util.h" // range, slice
+#include "random_forest/forest.h"
 
 Forest::Forest() { }
 Forest::Forest(int n_trees, int n_features) { init(n_trees, n_features); }

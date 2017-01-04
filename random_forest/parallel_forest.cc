@@ -1,7 +1,7 @@
 #include <cstdio>
-#include "parallel_forest.h"
-#include "pthread_pool.h"
-#include "util.h"
+#include "cart/util.h" // range, slice
+#include "random_forest/parallel_forest.h"
+#include "random_forest/pthread_pool.h" // pool_start, pool_enqueue, pool_wait, pool_end
 
 ParallelForest::ParallelForest() {
   init(2, 10);

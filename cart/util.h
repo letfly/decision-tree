@@ -1,6 +1,9 @@
+#ifndef CART_UTIL_H_
+#define CART_UTIL_H_
 #include <sstream> // stringstream
+#include <vector>
 
-std::vector<int> inline range(int start, int stop=-1, int step=1) { // range() in main.cc and matrix.cc O(stop)
+std::vector<int> inline range(int start, int stop=-1, int step=1) { // O(stop)
   std::vector<int> result;
   if (stop == -1) {
     stop = start;
@@ -10,7 +13,7 @@ std::vector<int> inline range(int start, int stop=-1, int step=1) { // range() i
   return result;
 }
 
-std::vector<std::string> inline split_string(const std::string &source, const char *delimiter = " ", bool keep_empty = false) { // split_string() in matrix.cc O(columns_size)
+std::vector<std::string> inline split_string(const std::string &source, const char *delimiter = " ", bool keep_empty = false) { // O(columns_size)
   std::vector<std::string> results;
 
   size_t prev = 0;
@@ -25,7 +28,7 @@ std::vector<std::string> inline split_string(const std::string &source, const ch
 }
 
 template<typename T>
-std::string inline join(std::vector<T> &list, const char delimiter) { // join() in tree_node.cc
+std::string inline join(std::vector<T> &list, const char delimiter) {
   std::stringstream ss;
   for (int i =0; i < list.size(); ++i) {
     ss << list[i];
@@ -59,3 +62,4 @@ std::vector<int> inline merge(std::vector<int> a, std::vector<int> b) {
   for (int i = 0; i < b.size(); ++i) a.push_back(b[i]);
   return a;
 }
+#endif

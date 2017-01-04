@@ -1,8 +1,7 @@
-#ifndef CART_TREE_NODE_H
-#define CART_TREE_NODE_H
+#ifndef CART_TREE_NODE_H_
+#define CART_TREE_NODE_H_
 #include <string>
-#include "classifier.h"
-#include "matrix.h"
+#include "cart/classifier.h"
 
 class TreeNode : public Classifier{
  private:
@@ -14,8 +13,8 @@ class TreeNode : public Classifier{
  public:
   TreeNode();
   ~TreeNode();
-  int count();
   void train(Matrix &m, std::vector<int> columns);
+  int count();
   virtual int classify(std::vector<double> &row);
 };
 #endif

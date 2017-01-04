@@ -6,7 +6,7 @@
  */
 #define CRT_SECURE_NO_WARNINGS
 #include <string>
-#include "utils/gboost_utils.h" // Assert, FopenCheck
+#include "utils/gboost_utils.h" // assert, fopen_check
 
 namespace gboost {
 namespace utils {
@@ -80,7 +80,7 @@ class ConfigIterator{
    * \param fname name of configure file
    */
   ConfigIterator(const char *fname) {
-    fi = FopenCheck(fname, "r");
+    fi = fopen_check(fname, "r");
     ch_buf = fgetc(fi);
   }
   /** \brief destructor */
@@ -89,7 +89,7 @@ class ConfigIterator{
    * \brief move iterator to next position
    * \return true if there is value in next position
    */
-  inline bool Next(void) {
+  inline bool next(void) {
     while (!feof(fi)) {
       GetNextToken(s_name);
       if (s_name[0] == '=') return false;
@@ -100,12 +100,12 @@ class ConfigIterator{
     return false;
   }
   /**
-   * \brief get current name, called after Next returns true
+   * \brief get current name, called after next returns true
    * \return current parameter name
    */
   inline const char *name(void)const { return s_name; }
   /**
-   * \brief get current value, called after Next returns true
+   * \brief get current value, called after next returns true
    * \return current parameter value
    */
   inline const char *val(void)const { return s_val; }

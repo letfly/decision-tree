@@ -2,9 +2,9 @@
 #include <cstdio> // printf
 #include <string> // string
 #include <unistd.h> // getopt, optarg
-#include "matrix.h" // Matrix
-#include "parallel_forest.h" // ParallelForest
-#include "util.h" // range
+#include "cart/matrix.h" // Matrix, load, rows, columns, submatrix, shuffled, merge_rows, operator, append_column, save
+#include "cart/util.h" // range, merge
+#include "random_forest/parallel_forest.h" // Classifier, ParallelForest, train, classify
 
 int n_threads, n_trees, n_features;
 double test(Classifier *c, Matrix &m, std::vector<int> &classes) {
@@ -23,30 +23,16 @@ double test(Classifier *c, Matrix &m, std::vector<int> &classes) {
   double percent = right*100.0/m.rows();
   return percent;
 }
-void train_only(Matrix &matrix) {
-  std::vector<Classifier*> classifiers;
-  std::vector<int> classes;
-  if (n_features > matrix.columns()-1 || n_features <= 0) n_features = matrix.columns()-1;
-  classifiers.push_back(new ParallelForest(n_trees, n_features, n_threads));
-
-  for (int i = 0; i < classifiers.size(); ++i) {
-    Classifier *classifier = classifiers[i];
-    printf("training classifier #%d\n", i);
-    classifier->train(matrix); // Model build
-    double percent = test(classifier, matrix, classes); // Output
-    printf("training set recovered: %f%%\n", percent);
-  }
-}
 double train_and_test(Matrix &train, Matrix &testing) {
   ParallelForest forest(n_trees, n_features, n_threads);
   forest.train(train);
   std::vector<int> classes;
   Classifier *classifier = &forest;
   double percent = test(classifier, testing, classes);
-  printf("%f%% correct\n", percent);
+  printf("subtrain set correct: %f%%\n", percent);
+
   std::vector<double> class_doubles(classes.begin(), classes.end());
   testing.append_column(class_doubles);
-
   return percent;
 }
 void folded_train_and_test(Matrix &input_matrix, int n_folds, std::string &test_file, std::string &result_file) { // n_folds = total/test
@@ -58,7 +44,6 @@ void folded_train_and_test(Matrix &input_matrix, int n_folds, std::string &test_
   double total_percent = 0.0;
   for (int i = 0; i < n_folds; ++i) {
     printf("Training and Testing Fold #%d\n", i);
-    ParallelForest forest(n_trees, n_features, n_threads);
 
     // Get training subset
     std::vector<int> training_rows;
@@ -82,7 +67,7 @@ void folded_train_and_test(Matrix &input_matrix, int n_folds, std::string &test_
     result.merge_rows(testing);
   }
   double percent = total_percent/n_folds;
-  printf("Percent recovered: %f%%\n", percent);
+  printf("Finall correct: %f%%\n", percent);
 
   std::vector<int> rows = range(result.rows());
   std::vector<int> cols;
@@ -118,7 +103,7 @@ int main(int argc, char **argv) {
   printf("\n\n%d rows and %d columns\n", m.rows(), m.columns());
 
   // Model build and Output
-  //train_only(m)=train_and_test(m, m);
+  //train_and_test(m, m);
   folded_train_and_test(m, 2, test_file, result_file);
 
   return 0;

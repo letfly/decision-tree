@@ -7,7 +7,7 @@
 namespace gboost {
 /** \brief namespace for helper utils of the project */
 namespace utils {
-inline FILE *FopenCheck(const char *fname, const char *flag) {
+inline FILE *fopen_check(const char *fname, const char *flag) {
   FILE *fp = fopen(fname, flag);
   if (fp == NULL) {
     fprintf(stderr, "can not open file \"%s\"\n", fname);
@@ -20,7 +20,9 @@ inline void Error(const char *msg) {
   exit(-1);
 }
 
-inline void Assert(bool exp, const char *msg ) { if(!exp) Error(msg); }
+inline void assert(bool exp) { if (!exp) Error("AssertError"); }
+
+inline void assert(bool exp, const char *msg ) { if(!exp) Error(msg); }
 
 /** \brief replace fopen, report error the file open fails */
 }

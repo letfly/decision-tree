@@ -1,6 +1,6 @@
-#ifndef PARALLEL_FOREST_H
-#define PARALLEL_FOREST_H
-#include "forest.h"
+#ifndef PARALLEL_FOREST_H_
+#define PARALLEL_FOREST_H_
+#include "random_forest/forest.h" // Forest, Matrix, classify
 
 class ParallelForest : public Forest {
  protected:

@@ -1,5 +1,5 @@
-#ifndef CLASSIFIER_H
-#define CLASSIFIER_H
+#ifndef CLASSIFIER_H_
+#define CLASSIFIER_H_
 #include <cstdio>
 #include "matrix.h"
 

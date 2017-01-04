@@ -2,9 +2,9 @@
 #define GBOOST_REG_TRAIN_H_
 #include <string>
 #include <vector>
-#include "regression/gboost_reg.h" // RegBoostLearner, SetParam, SetData
-#include "regression/gboost_regdata.h" // DMatrix, LoadText
-#include "utils/gboost_config.h" // ConfigIterator, Assert, Next, name, val
+#include "regression/gboost_reg.h" // RegBoostLearner, set_param, set_data
+#include "regression/gboost_regdata.h" // DMatrix, load_text
+#include "utils/gboost_config.h" // ConfigIterator, assert, next, name, val
 #include "utils/gboost_string.h" // StringProcessing, split
 
 namespace gboost {
@@ -21,7 +21,7 @@ class RegBoostTrain {
     std::vector<std::string> validation_data_paths;
     std::vector<std::string> validation_data_names;
 
-    inline void SetParam(const char *name, const char *val) {
+    inline void set_param(const char *name, const char *val) {
       if (!strcmp("boost_iterations", name)) boost_iterations = atoi(val);
       if (!strcmp("save_period", name)) save_period = atoi(val);
       if (!strcmp("train_path", name)) strcpy(train_path, val);
@@ -42,24 +42,24 @@ class RegBoostTrain {
     // Get the training data and validation data paths
     utils::ConfigIterator config_itr(config_path);
     // Config the learner
-    while (config_itr.Next()) {
+    while (config_itr.next()) {
       printf("name=%sval=%s\n", config_itr.name(), config_itr.val());
-      reg_boost_learner->SetParam(config_itr.name(), config_itr.val());
-      train_param.SetParam(config_itr.name(), config_itr.val());
+      reg_boost_learner->set_param(config_itr.name(), config_itr.val());
+      train_param.set_param(config_itr.name(), config_itr.val());
     }
-    utils::Assert(train_param.validation_data_paths.size() == train_param.validation_data_names.size(),
+    utils::assert(train_param.validation_data_paths.size() == train_param.validation_data_names.size(),
       "The number of validation paths is not the same as the number of validation data set names");
 
     // Input
     DMatrix train;
-    //train.LoadText(train_param.train_path, silent);
+    //train.load_text(train_param.train_path, silent);
     std::vector<const DMatrix *> evals;
     for (int i = 0; i < train_param.validation_data_paths.size(); ++i) {
       DMatrix eval;
-      eval.LoadText(train_param.validation_data_paths[i].c_str(), silent);
+      eval.load_text(train_param.validation_data_paths[i].c_str(), silent);
       evals.push_back(&eval);
     }
-    reg_boost_learner->SetData(&train, evals, train_param.validation_data_names);
+    reg_boost_learner->set_data(&train, evals, train_param.validation_data_names);
   }
 };
 }
