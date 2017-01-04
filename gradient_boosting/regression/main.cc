@@ -1,4 +1,4 @@
-#include "regression/gboost_reg_train.h" // RegBoostTrain, train
+#include "regression/train.h" // RegBoostTrain, train
 
 int main(int argc, char *argv[]) {
   // Input

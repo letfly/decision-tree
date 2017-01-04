@@ -1,12 +1,12 @@
-#ifndef GBOOST_CONFIG_H_
-#define GBOOST_CONFIG_H_
+#ifndef UTILS_CONFIG_H_
+#define UTILS_CONFIG_H_
 /**
  * \file gboost_config.h
  * \brief helper class to load in configures from file
  */
 #define CRT_SECURE_NO_WARNINGS
 #include <string>
-#include "utils/gboost_utils.h" // assert, fopen_check
+#include "utils/utils.h" // assert, fopen_check
 
 namespace gboost {
 namespace utils {

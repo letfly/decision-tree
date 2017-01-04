@@ -1,7 +1,7 @@
-#ifndef GBOOST_UTILS_H_
-#define GBOOST_UTILS_H_
+#ifndef UTILS_H_
+#define UTILS_H_
 /**
- * \file gboost_utils.h
+ * \file utils.h
  * \brief simple utils to support the code
  */
 namespace gboost {

@@ -1,6 +1,7 @@
-#ifndef GBOOST_DATA_H_
-#define GBOOST_DATA_H_
-#include "utils/gboost_utils.h" // assert
+#ifndef BOOSTER_DATA_H_
+#define BOOSTER_DATA_H_
+#include "utils/utils.h" // assert
+
 namespace gboost {
 namespace booster {
 typedef int bst_int;

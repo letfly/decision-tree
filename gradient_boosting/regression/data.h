@@ -1,15 +1,15 @@
-#ifndef GBOOST_REGDATA_H_
-#define GBOOST_REGDATA_H_
+#ifndef REG_DATA_H_
+#define REG_DATA_H_
 #include <fstream> // ifstream
-#include "booster/gboost_data.h" // FMatrixS, clear, add_row, num_row, operator, num_entry
-#include "utils/gboost_utils.h" // fopen_check
+#include "booster/data.h" // FMatrixS, clear, add_row, num_row, operator, num_entry
+#include "utils/utils.h" // fopen_check
 
 namespace gboost {
 namespace regression {
 struct DMatrix {
  private:
   std::vector<float> labels;
-  inline void UpdateInfo(void) {
+  inline void update_info(void) {
     this->num_feature = 0;
     for (size_t i = 0; i < data.num_row(); ++i) {
       booster::FMatrixS::Line sp = data[i];
@@ -35,7 +35,7 @@ struct DMatrix {
 
     while (fscanf(file, "%s", tmp) == 1) {
       unsigned index; float value;
-      printf("tmp=%s %d %d %f", tmp, sscanf(tmp, "%u:%f", &index, &value), index, value);
+      //printf("tmp=%s %d %d %f", tmp, sscanf(tmp, "%u:%f", &index, &value), index, value);
       if (sscanf(tmp, "%u:%f", &index, &value) == 2) {
         findex.push_back(index); fvalue.push_back(value);
       } else {
@@ -51,12 +51,13 @@ struct DMatrix {
     labels.push_back(label);
     data.add_row(findex, fvalue);
 
-    this->UpdateInfo();
+    this->update_info();
     if (!silent)
       printf("%ux%u matrix with %lu entries is loaded from %s\n",
         (unsigned)labels.size(), num_feature, (unsigned long)data.num_entry(), fname);
     fclose(file);
   }
+  inline size_t size() const { return labels.size(); }
 };
 }
 }

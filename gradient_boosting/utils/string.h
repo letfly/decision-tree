@@ -1,5 +1,5 @@
-#ifndef GBOOST_STRING_H_
-#define GBOOST_STRING_H_
+#ifndef UTILS_STRING_H_
+#define UTILS_STRING_H_
 #include <sstream> // stringstream
 
 namespace gboost {
