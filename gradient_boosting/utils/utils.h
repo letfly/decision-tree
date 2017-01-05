@@ -1,12 +1,16 @@
 #ifndef UTILS_H_
 #define UTILS_H_
-/**
- * \file utils.h
- * \brief simple utils to support the code
- */
+#include <cstdlib> // exit
+
 namespace gboost {
-/** \brief namespace for helper utils of the project */
 namespace utils {
+inline void error(const char *msg) {
+  fprintf(stderr, "Error");
+  exit(-1);
+}
+inline void assert(bool exp) { if (!exp) error("AssertError"); }
+inline void assert(bool exp, const char *msg ) { if(!exp) error(msg); }
+
 inline FILE *fopen_check(const char *fname, const char *flag) {
   FILE *fp = fopen(fname, flag);
   if (fp == NULL) {
@@ -15,16 +19,6 @@ inline FILE *fopen_check(const char *fname, const char *flag) {
   }
   return fp;
 }
-inline void Error(const char *msg) {
-  fprintf(stderr, "Error");
-  exit(-1);
-}
-
-inline void assert(bool exp) { if (!exp) Error("AssertError"); }
-
-inline void assert(bool exp, const char *msg ) { if(!exp) Error(msg); }
-
-/** \brief replace fopen, report error the file open fails */
 }
 }
 

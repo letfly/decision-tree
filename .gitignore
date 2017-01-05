@@ -5,3 +5,4 @@ main
 */tags
 *.out
 *.o
+*txt

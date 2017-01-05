@@ -10,44 +10,41 @@
 
 namespace gboost {
 namespace utils {
-/**
- * \brief an iterator that iterates over a configure file and gets the configures
- */
 class ConfigIterator{
  private:
   FILE *fi;
   char ch_buf;
   char s_name[256], s_buf[246], s_val[256];
-  inline void SkipLine() {
+  inline void skip_line() {
     do{
       ch_buf = fgetc(fi);
     } while (ch_buf!=EOF && ch_buf!='\n' && ch_buf!='\r');
   }
-  inline void ParseStr(char tok[]) {
+  inline void parse_str(char tok[]) {
     int i = 0;
     while ((ch_buf = fgetc(fi)) != EOF) {
       switch (ch_buf) {
         case '\\': tok[i++] = fgetc(fi); break;
         case '\"': tok[i++] = '\0'; return;
         case '\r':
-        case '\n': Error("unterminated string"); break;
+        case '\n': error("unterminated string"); break;
         default: tok[i++] = ch_buf;
       }
     }
-    Error("unterminated string"); 
+    error("unterminated string"); 
   }
-  inline bool GetNextToken(char tok[]){
+  inline bool get_next_token(char tok[]){
     int i = 0;
     bool new_line = false;
     while (ch_buf != EOF) {
       switch (ch_buf) {
-        case '#': SkipLine(); new_line = true; break;
+        case '#': skip_line(); new_line = true; break;
         case '\"':
           if (i == 0) {
-            ParseStr(tok);
+            parse_str(tok);
             ch_buf = fgetc(fi);
             return new_line;
-          } else Error("token followed directly by string");
+          } else error("token followed directly by string");
         case '=':
           if (i == 0) {
             ch_buf = fgetc(fi);
@@ -75,10 +72,6 @@ class ConfigIterator{
     return true;
   }
  public:
-  /**
-   * \brief constructor
-   * \param fname name of configure file
-   */
   ConfigIterator(const char *fname) {
     fi = fopen_check(fname, "r");
     ch_buf = fgetc(fi);
@@ -91,10 +84,10 @@ class ConfigIterator{
    */
   inline bool next(void) {
     while (!feof(fi)) {
-      GetNextToken(s_name);
+      get_next_token(s_name);
       if (s_name[0] == '=') return false;
-      if (GetNextToken(s_buf) || s_buf[0]!='=') return false;
-      if (GetNextToken(s_val) || s_val[0]=='=') return false;
+      if (get_next_token(s_buf) || s_buf[0]!='=') return false;
+      if (get_next_token(s_val) || s_val[0]=='=') return false;
       return true;
     }
     return false;
