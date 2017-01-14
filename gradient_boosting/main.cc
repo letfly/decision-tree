@@ -1,6 +1,8 @@
 #include <vector>
-#include "learner/learner.h"
-#include "utils/config.h"
+#include "io/io.h"
+#include "learner/dmatrix.h"
+#include "learner/learner.h" // BoostLearner
+#include "utils/config.h" // ConfigIterator, assert
 
 class Task {
  private:
@@ -17,14 +19,39 @@ class Task {
     if (!strcmp("test_path", name)) test_path = val;
     if (!strncmp("eval[", name, 5)) {
       char evname[256];
-      gboost::utils::assert(sscanf(name, "eval{%[^]]", evname)==1, "must specify evaluation name for display");
+      gboost::utils::assert(sscanf(name, "eval[%[^]]", evname)==1, "must specify evaluation name for display");
       eval_data_names.push_back(std::string(evname));
       eval_data_paths.push_back(std::string(val));
     }
     learner.set_param(name, val);
   }
 
-  inline void init_data() {}
+  gboost::learner::DMatrix *train_data;
+  int silent; // Whether use printf
+  int use_buffer; // Whether use binary buffer
+  std::vector<gboost::learner::DMatrix *> test_data_vec;
+  std::vector<const gboost::learner::DMatrix *> test_data_vecall;
+  int eval_train; // Whether evaluate train sets
+  inline void init_data() {
+    train_data = gboost::io::load_data_matrix(train_path.c_str(), silent!=0, use_buffer!=0);
+    gboost::utils::assert(eval_data_names.size() == eval_data_paths.size(), "BUG");
+    for (size_t i = 0; i < eval_data_paths.size(); ++i) {
+      test_data_vec.push_back(gboost::io::load_data_matrix(eval_data_paths[i].c_str(), silent!=0, use_buffer!=0));
+      test_data_vecall.push_back(test_data_vec.back());
+    }
+
+    printf(" ddd ");
+    std::vector<gboost::learner::DMatrix *> dcache(1, train_data);
+    for (size_t i = 0; i < test_data_vec.size(); ++i) dcache.push_back(test_data_vec[i]);
+    // Set cache data to be all train and evaluation data
+    learner.set_cache_data(dcache);
+
+    // Add train set to evaluation set if needed
+    if (eval_train != 0) {
+      test_data_vecall.push_back(train_data);
+      eval_data_names.push_back(std::string("train"));
+    }
+  }
 
   inline void init_learner() {}
 

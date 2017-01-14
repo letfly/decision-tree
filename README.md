@@ -30,7 +30,7 @@ make
 ### Running the program
 ```
 cd gradient_boosting
-make
+./run.sh
 ```
 ### Required Parameters
 ### Optional Parameters
