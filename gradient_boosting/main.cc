@@ -40,7 +40,6 @@ class Task {
       test_data_vecall.push_back(test_data_vec.back());
     }
 
-    printf(" ddd ");
     std::vector<gboost::learner::DMatrix *> dcache(1, train_data);
     for (size_t i = 0; i < test_data_vec.size(); ++i) dcache.push_back(test_data_vec[i]);
     // Set cache data to be all train and evaluation data
@@ -53,10 +52,18 @@ class Task {
     }
   }
 
-  inline void init_learner() {}
+  inline void init_learner() {
+    learner.init_model();
+  }
 
   inline void train() {}
  public:
+  ~Task(void){
+    for (size_t i = 0; i < test_data_vec.size(); i++){
+      delete test_data_vec[i];
+    }
+    if (train_data != NULL) delete train_data;
+  }
   inline void run(int argc, char *argv[]) {
     if (argc < 2) {
       printf("please use use config file\n");

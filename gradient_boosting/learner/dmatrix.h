@@ -48,7 +48,7 @@ struct MetaInfo {
     fo.write(info.root_index);
     fo.write(base_margin);
   }
-  // \brief clear all the information */
+  // \brief clear all the information
   inline void clear(void) {
     labels.clear();
     group_ptr.clear();
@@ -56,6 +56,11 @@ struct MetaInfo {
     info.root_index.clear();
     base_margin.clear();
     info.num_row = info.num_col = 0;
+  }
+  // \brief get weight of each instances
+  inline float get_weight(size_t i) const {
+    if (weights.size() != 0) return weights[i];
+    else return 1.0f;
   }
 };
 struct DMatrix {

@@ -87,11 +87,9 @@ class DMatrixSimple: public learner::DMatrix {
     info.info.num_row += 1;
     return row_ptr_.size() - 2;
   }
-  /*!
-   * \brief load from text file
-   * \param fname name of text data
-   * \param silent whether print information or not
-   */
+  // \brief load from text file
+  // \param fname name of text data
+  // \param silent whether print information or not
   inline void load_text(const char* fname, bool silent = false) {
     this->clear();
     FILE* file = utils::fopen_check(fname, "r");

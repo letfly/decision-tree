@@ -59,10 +59,8 @@ class FMatrixS: public IFMatrix {
       fo.write(begin_ptr(data), data.size() * sizeof(RowBatch::Entry));
     }
   }
-  /*!
-   * \brief save column access data into stream
-   * \param fo output stream to save to
-   */
+  // \brief save column access data into stream
+  // \param fo output stream to save to
   inline void save_col_access(utils::FileStream &fo) const {
     fo.write(buffered_rowset_);
     if (buffered_rowset_.size() != 0) {
