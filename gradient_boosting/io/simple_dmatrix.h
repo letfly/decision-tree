@@ -22,7 +22,20 @@ class DMatrixSimple: public learner::DMatrix {
     explicit OneBatchIter(DMatrixSimple *parent)
       : at_first_(true), parent_(parent) {}
     virtual ~OneBatchIter() {}
-    virtual void BeforeFirst() { at_first_ = true; }
+    virtual void before_first(void) { at_first_ = true; }
+
+    // temporal space for batch
+    RowBatch batch_;
+    virtual bool next(void) {
+      if (!at_first_) return false;
+      at_first_ = false;
+      batch_.size = parent_->row_ptr_.size() - 1;
+      batch_.base_rowid = 0;
+      batch_.ind_ptr = utils::begin_ptr(parent_->row_ptr_);
+      batch_.data_ptr = utils::begin_ptr(parent_->row_data_);
+      return true;
+    }
+    virtual const RowBatch &value(void) const { return batch_; }
   };
 
   // data fields
@@ -31,6 +44,7 @@ class DMatrixSimple: public learner::DMatrix {
   // \brief data in the row
   std::vector<RowBatch::Entry> row_data_;
 
+  virtual IFMatrix *fmat(void) const { return fmat_; }
  public:
   static const int kMagic = 0xffffab01;
   // Constructor

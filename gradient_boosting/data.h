@@ -1,15 +1,14 @@
 #ifndef DATA_H_
 #define DATA_H_
 #include <vector>
+#include "utils/iterator.h"
+
 namespace gboost {
 // \brief unsigned interger type used in boost,
 //        used for feature index and row index
 typedef unsigned bst_uint;
 // \brief float type, used for storing statistics
 typedef float bst_float;
-
-class IFMatrix {
-};
 
 struct SparseBatch {
   // \brief an entry of sparse vector
@@ -26,9 +25,66 @@ struct SparseBatch {
       return a.fvalue < b.fvalue;
     }
   };
+  // \brief an instance of sparse vector in the batch
+  struct Inst {
+    // \brief pointer to the elements
+    const Entry *data;
+    // \brief length of the instance
+    bst_uint length;
+    // \brief constructor
+    Inst(const Entry *data, bst_uint length) : data(data), length(length) {}
+    // \brief get i-th pair in the sparse vector
+    inline const Entry& operator[](size_t i) const {
+      return data[i];
+    }
+  };
+  // \brief batch size
+  size_t size;
 };
 
-struct RowBatch: public SparseBatch {
+// \brief read-only row batch, used to access row continuously
+class RowBatch: public SparseBatch {
+ public:
+  // \brief the offset of rowid of this batch
+  size_t base_rowid;
+
+  // \brief array[ind_ptr.back()], content of the sparse element
+  const Entry *data_ptr;
+  // \brief array[size+1], row pointer of each of the elements
+  const size_t *ind_ptr;
+  // \brief get i-th row from the batch
+  inline Inst operator[](size_t i) const {
+    return Inst(data_ptr + ind_ptr[i], static_cast<bst_uint>(ind_ptr[i+1] - ind_ptr[i]));
+  }
+};
+
+// \brief read-only column batch, used to access columns,
+//        the columns are not required to be continuous
+struct ColBatch : public SparseBatch {
+  // \brief column index of each columns in the data
+  const bst_uint *col_index;
+  // \brief pointer to the column data
+  const Inst *col_data;
+  // \brief get i-th row from the batch
+  inline Inst operator[](size_t i) const {
+    return col_data[i];
+  }
+};
+
+class IFMatrix {
+ public:
+  // \brief check if column access is supported, if not, initialize column access
+  // \param subsample subsample ratio when generating column access
+  virtual void init_col_access(float subsample) = 0;
+  // the interface only need to ganrantee row iter
+  // column iter is active, when col_iterator is called, row_iter can be disabled
+  // \brief get the row iterator associated with FMatrix
+  virtual utils::IIterator<RowBatch> *row_iterator(void) = 0;
+  //\brief get column iterator
+  virtual utils::IIterator<ColBatch> *col_iterator(void) = 0;
+
+  // \brief reference of buffered rowset
+  virtual const std::vector<bst_uint> &buffered_rowset(void) const = 0;
 };
 
 // Extra information that might needed by gbm and tree module
@@ -43,12 +99,20 @@ struct BoosterInfo {
   std::vector<unsigned> root_index;
   // Number of rows, number of columns
   BoosterInfo(void) : num_row(0), num_col(0) { }
+
+  // \brief set fold indicator
+  std::vector<unsigned> fold_index;
 };
 
-// \brief read-only column batch, used to access columns,
-//        the columns are not required to be continuous
-struct ColBatch : public SparseBatch {
-};
 
+// \brief gradient statistics pair usually needed in gradient boosting
+struct bst_gpair {
+  // \brief gradient statistics
+  bst_float grad;
+  // \brief second order gradient statistics
+  bst_float hess;
+  bst_gpair(void) {}
+  bst_gpair(bst_float grad, bst_float hess) : grad(grad), hess(hess) {}
+};
 }
 #endif

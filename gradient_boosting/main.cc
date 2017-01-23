@@ -3,6 +3,7 @@
 #include "learner/dmatrix.h"
 #include "learner/learner.h" // BoostLearner
 #include "utils/config.h" // ConfigIterator, assert
+#include "utils/utils.h" // fopen_check
 
 class Task {
  private:
@@ -56,7 +57,21 @@ class Task {
     learner.init_model();
   }
 
-  inline void train() {}
+  gboost::learner::DMatrix *data;
+  inline void train() {
+    const time_t start = time(NULL);
+    unsigned long elapsed = 0;
+    learner.check_init(data);
+    for (int i = 0; i < num_round; ++i) {
+      elapsed = (unsigned long)(time(NULL) - start);
+      if (!silent) printf("boosting round %d, %lu sec elapsed\n", i, elapsed);
+      learner.update_one_iter(i, *data);
+      std::string res = learner.eval_one_iter(i, test_data_vecall, eval_data_names);
+      fprintf(stderr, "%s\n", res.c_str());
+      elapsed = (unsigned long)(time(NULL) - start);
+    }
+    if (!silent) printf("\nupdating end, %lu sec in all\n", elapsed);
+  }
  public:
   ~Task(void){
     for (size_t i = 0; i < test_data_vec.size(); i++){

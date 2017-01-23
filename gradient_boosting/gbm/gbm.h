@@ -1,7 +1,9 @@
 #ifndef GBM_GBM_H_
 #define GBM_GBM_H_
+#include "data.h" // RowBatch, bst_gpair
 #include "tree/updater.h" //IUpdater
 #include "tree/model.h" // RegTree
+#include "utils/iterator.h" // IIterator
 
 namespace gboost {
 namespace gbm {
@@ -14,7 +16,32 @@ class IGradBooster {
   // \brief initialize the model
   virtual void init_model(void) = 0;
   // destrcutor
-  virtual ~IGradBooster(void){}
+  virtual ~IGradBooster(void){} 
+
+  // \brief generate predictions for given feature matrix
+  // \param p_fmat feature matrix
+  // \param buffer_offset buffer index offset of these instances, if equals -1
+  //        this means we do not have buffer index allocated to the gbm
+  //  a buffer index is assigned to each instance that requires repeative prediction
+  //  the size of buffer is set by convention using IGradBooster.SetParam("num_pbuffer","size")
+  // \param info extra side information that may be needed for prediction
+  // \param out_preds output vector to hold the predictions
+  // \param ntree_limit limit the number of trees used in prediction, when it equals 0, this means 
+  //    we do not limit number of trees, this parameter is only valid for gbtree, but not for gblinear
+  virtual void predict(IFMatrix *p_fmat,
+                       int64_t buffer_offset,
+                       const BoosterInfo &info,
+                       std::vector<float> *out_preds,
+                       unsigned ntree_limit = 0) = 0;
+
+  // \brief peform update to the model(boosting)
+  // \param p_fmat feature matrix that provide access to features
+  // \param info meta information about training
+  // \param in_gpair address of the gradient pair statistics of the data
+  // the booster may change content of gpair
+  virtual void do_boost(IFMatrix *p_fmat,
+                       const BoosterInfo &info,
+                       std::vector<bst_gpair> *in_gpair) = 0;
 };
 class GBTree : public IGradBooster {
  private:
@@ -149,6 +176,21 @@ class GBLinear : public IGradBooster {
       if (!strcmp( "reg_alpha", name)) reg_alpha = static_cast<float>(atof(val));
       if (!strcmp( "reg_lambda_bias", name)) reg_lambda_bias = static_cast<float>(atof(val));
     }
+
+    // given original weight calculate delta bias
+    inline double calc_delta_bias(double sum_grad, double sum_hess, double w) {
+      return - (sum_grad + reg_lambda_bias * w) / (sum_hess + reg_lambda_bias);
+    }
+    // given original weight calculate delta
+    inline double calc_delta(double sum_grad, double sum_hess, double w) {
+      if (sum_hess < 1e-5f) return 0.0f;
+      double tmp = w - (sum_grad + reg_lambda * w) / (sum_hess + reg_lambda);
+      if (tmp >=0) {
+        return std::max(-(sum_grad + reg_lambda * w + reg_alpha) / (sum_hess + reg_lambda), -w);
+      } else {
+        return std::min(-(sum_grad + reg_lambda * w - reg_alpha) / (sum_hess + reg_lambda), -w);
+      }
+    }
   };
   // training parameter
   ParamTrain param;
@@ -182,9 +224,28 @@ class GBLinear : public IGradBooster {
       weight.resize((param.num_feature + 1) * param.num_output_group);
       std::fill(weight.begin(), weight.end(), 0.0f);
     }
+
+    // get i-th weight
+    inline float* operator[](size_t i) {
+      return &weight[i * param.num_output_group];
+    }
+    // model bias
+    inline float* bias(void) {
+      return &weight[param.num_feature * param.num_output_group];
+    }
   };
   // model field
   Model model;
+
+  inline void pred(const RowBatch::Inst &inst, float *preds) {
+    for (int gid = 0; gid < model.param.num_output_group; ++gid) {
+      float psum = model.bias()[gid];
+      for (bst_uint i = 0; i < inst.length; ++i) {
+        psum += inst[i].fvalue * model[inst[i].index][gid];
+      }
+      preds[gid] = psum;
+    }
+  }
  public:
   // set model parameters
   virtual void set_param(const char *name, const char *val) {
@@ -194,10 +255,98 @@ class GBLinear : public IGradBooster {
   virtual void init_model(void) {
     model.init_model();
   }
+  virtual void predict(IFMatrix *p_fmat,
+                       int64_t buffer_offset,
+                       const BoosterInfo &info,
+                       std::vector<float> *out_preds,
+                       unsigned ntree_limit = 0) {
+    utils::check(ntree_limit == 0,
+                 "GBLinear::predict ntrees is only valid for gbtree predictor");
+    std::vector<float> &preds = *out_preds;
+    preds.resize(0);
+    // start collecting the prediction
+    utils::IIterator<RowBatch> *iter = p_fmat->row_iterator();
+    const int ngroup = model.param.num_output_group;
+    while (iter->next()) {
+      const RowBatch &batch = iter->value();
+      utils::assert(batch.base_rowid * ngroup == preds.size(),
+                    "base_rowid is not set correctly");
+      // output convention: nrow * k, where nrow is number of rows
+      // k is number of group
+      preds.resize(preds.size() + batch.size * ngroup);
+      // parallel over local batch
+      const bst_uint nsize = static_cast<bst_uint>(batch.size);
+      for (bst_uint i = 0; i < nsize; ++i) {
+        const size_t ridx = batch.base_rowid + i;
+        // loop over output groups
+        for (int gid = 0; gid < ngroup; ++gid)
+          this->pred(batch[i], &preds[ridx * ngroup]);
+      }
+    }
+  }
+
+  virtual void do_boost(IFMatrix *p_fmat,
+                       const BoosterInfo &info,
+                       std::vector<bst_gpair> *in_gpair) {
+    std::vector<bst_gpair> &gpair = *in_gpair;
+    const int ngroup = model.param.num_output_group;
+    const std::vector<bst_uint> &rowset = p_fmat->buffered_rowset();
+    // for all the output group
+    for (int gid = 0; gid < ngroup; ++gid) {
+      double sum_grad = 0.0, sum_hess = 0.0;
+      const bst_uint ndata = static_cast<bst_uint>(rowset.size());
+      for (bst_uint i = 0; i < ndata; ++i) {
+        bst_gpair &p = gpair[rowset[i] * ngroup + gid];
+        if (p.hess >= 0.0f) {
+          sum_grad += p.grad; sum_hess += p.hess;
+        }
+      }
+      // remove bias effect
+      bst_float dw = static_cast<bst_float>(
+          param.learning_rate * param.calc_delta_bias(sum_grad, sum_hess, model.bias()[gid]));
+      model.bias()[gid] += dw;
+      // update grad value
+      for (bst_uint i = 0; i < ndata; ++i) {
+        bst_gpair &p = gpair[rowset[i] * ngroup + gid];
+        if (p.hess >= 0.0f) {
+          p.grad += p.hess * dw;
+        }
+      }
+    }
+    utils::IIterator<ColBatch> *iter = p_fmat->col_iterator();
+    while (iter->next()) {
+      // number of features
+      const ColBatch &batch = iter->value();
+      const bst_uint nfeat = static_cast<bst_uint>(batch.size);
+      for (bst_uint i = 0; i < nfeat; ++i) {
+        const bst_uint fid = batch.col_index[i];
+        ColBatch::Inst col = batch[i];
+        for (int gid = 0; gid < ngroup; ++gid) {
+          double sum_grad = 0.0, sum_hess = 0.0;
+          for (bst_uint j = 0; j < col.length; ++j) {
+            const float v = col[j].fvalue;
+            bst_gpair &p = gpair[col[j].index * ngroup + gid];
+            if (p.hess < 0.0f) continue;
+            sum_grad += p.grad * v;
+            sum_hess += p.hess * v * v;
+          }
+          float &w = model[fid][gid];
+          bst_float dw = static_cast<bst_float>(param.learning_rate * param.calc_delta(sum_grad, sum_hess, w));
+          w += dw;
+          // update grad value
+          for (bst_uint j = 0; j < col.length; ++j) {
+            bst_gpair &p = gpair[col[j].index * ngroup + gid];
+            if (p.hess < 0.0f) continue;
+            p.grad += p.hess * col[j].fvalue * dw;
+          }
+        }
+      }
+    }
+  }
 };
 
 IGradBooster* create_grad_booster(const char *name) {
-  if (!strcmp("gbtree", name)) return new GBTree();
+  //if (!strcmp("gbtree", name)) return new GBTree();
   if (!strcmp("gblinear", name)) return new GBLinear();
   utils::error("unknown booster type: %s", name);
   return NULL;

@@ -3,7 +3,7 @@
 #include <cstdlib> // NULL
 #include "utils/stream.h" // FileStream
 #include "utils/utils.h" // check
-#include "data.h" // BoosterInfo
+#include "data.h" // BoosterInfo, IFMatrix
 
 namespace gboost {
 namespace learner {
@@ -62,6 +62,11 @@ struct MetaInfo {
     if (weights.size() != 0) return weights[i];
     else return 1.0f;
   }
+
+  // \return number of rows in dataset
+  inline size_t num_row(void) const {
+    return info.num_row;
+  }
 };
 struct DMatrix {
   const int magic;
@@ -73,6 +78,8 @@ struct DMatrix {
   // Default constructor
   explicit DMatrix(int magic): magic(magic), cache_learner_ptr_(NULL) {}
   virtual ~DMatrix() {}
+  // \brief get feature matrix about data content
+  virtual IFMatrix *fmat(void) const = 0;
 };
 }
 }

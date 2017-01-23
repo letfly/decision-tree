@@ -52,7 +52,6 @@ inline int sprintf(char *buf, size_t size, const char *fmt, ...) {
   va_end(args);
   return ret;
 }
-}
 
 // easy utils that can be directly acessed in gboost
 // \brief get the beginning address of a vector
@@ -68,6 +67,7 @@ inline const T *begin_ptr(const std::vector<T> &vec) {
   else return &vec[0];
 }
 
+}
 }
 
 #endif
