@@ -21,7 +21,7 @@ struct SparseBatch {
     Entry(void) {}
     Entry(bst_uint index, bst_float fvalue) : index(index), fvalue(fvalue) {}
     // reversely compare feature values
-    inline static bool CmpValue(const Entry &a, const Entry &b) {
+    inline static bool cmp_value(const Entry &a, const Entry &b) {
       return a.fvalue < b.fvalue;
     }
   };

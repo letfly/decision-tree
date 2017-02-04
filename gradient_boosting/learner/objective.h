@@ -54,7 +54,7 @@ struct LossType {
   // \return transformed prediction
   inline float pred_transform(float x) const {
     switch (loss_type) {
-      case kLinearSquare: return x;
+      case kLinearSquare: {printf("ddd");return x;}
       default: utils::error("unknown loss_type"); return 0.0f;
     }
   }
@@ -116,6 +116,13 @@ class RegLossObj : public IObjFunction{
       if (info.labels[j] == 1.0f) w *= scale_pos_weight;
       gpair[i] = bst_gpair(loss.first_order_gradient(p, info.labels[j]) * w,
                            loss.second_order_gradient(p, info.labels[j]) * w);
+    }
+  }
+  virtual void pred_transform(std::vector<float> *io_preds) {
+    std::vector<float> &preds = *io_preds;
+    const bst_uint ndata = static_cast<bst_uint>(preds.size());
+    for (bst_uint j = 0; j < ndata; ++j) {
+      preds[j] = loss.pred_transform(preds[j]);
     }
   }
 };

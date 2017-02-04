@@ -54,6 +54,9 @@ struct EvalRMSE : public EvalEWiseBase<EvalRMSE> {
     float diff = label - pred;
     return diff * diff;
   }
+  inline static float get_final(float esum, float wsum) {
+    return std::sqrt(esum / wsum);
+  }
 };
 // \brief error
 struct EvalError : public EvalEWiseBase<EvalError> {

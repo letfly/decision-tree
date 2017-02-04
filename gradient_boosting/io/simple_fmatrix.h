@@ -1,6 +1,6 @@
 #ifndef IO_SIMPLE_FMATRIX_H_
 #define IO_SIMPLE_FMATRIX_H_
-#include "data.h" // IFMatrix
+#include "data.h" // IFMatrix, RowBatch
 #include "utils/iterator.h" // IIterator
 #include "utils/stream.h" // FileStream
 #include "utils/utils.h" // check, begin_ptr
@@ -80,12 +80,18 @@ class FMatrixS: public IFMatrix {
   }
   // one batch iterator that return content in the matrix
   struct OneBatchIter: utils::IIterator<ColBatch> {
-    OneBatchIter(void) {}
-    virtual bool next(void) { return true; }
+    // whether is at first
+    bool at_first_;
+    OneBatchIter(void): at_first_(true) {}
+    virtual bool next(void) {
+      if (!at_first_) return false;
+      at_first_ = false;
+      return true;
+    }
     // temporal space for batch
     ColBatch batch_;
     virtual const ColBatch &value(void) const { return batch_; }
-    virtual void before_first(void) {}
+    virtual void before_first(void) { at_first_ = true; }
     // data content
     std::vector<bst_uint> col_index_;
     std::vector<ColBatch::Inst> col_data_;
@@ -100,6 +106,7 @@ class FMatrixS: public IFMatrix {
       }
       batch_.col_index = utils::begin_ptr(col_index_);
       batch_.col_data = utils::begin_ptr(col_data_);
+      this->before_first();
     }
   };
   // column iterator
@@ -118,7 +125,7 @@ class FMatrixS: public IFMatrix {
     return buffered_rowset_;
   }
  public:
-  FMatrixS(utils::IIterator<RowBatch> *iter) {}
+  FMatrixS(utils::IIterator<RowBatch> *iter) { this->iter_ = iter; }
   // \brief load data from binary stream
   // \param fi input stream
   // \param out_ptr pointer data
@@ -142,7 +149,7 @@ class FMatrixS: public IFMatrix {
   inline void load_col_access(utils::FileStream &fi) {
     utils::check(fi.read(&buffered_rowset_), "invalid input file format");
     if (buffered_rowset_.size() != 0) {
-      load_binary(fi, &col_ptr_, &col_data_);
+      this->load_binary(fi, &col_ptr_, &col_data_);
     }
   }
 
@@ -157,23 +164,24 @@ class FMatrixS: public IFMatrix {
     fo.write(&nrow, sizeof(size_t));
     fo.write(utils::begin_ptr(ptr), ptr.size() * sizeof(size_t));
     if (data.size() != 0) {
-      fo.write(utils::begin_ptr(data), data.size() * sizeof(RowBatch::Entry));
+        fo.write(utils::begin_ptr(data), data.size() * sizeof(RowBatch::Entry));
+      }
     }
-  }
-  // \brief save column access data into stream
-  // \param fo output stream to save to
-  inline void save_col_access(utils::FileStream &fo) const {
-    fo.write(buffered_rowset_);
-    if (buffered_rowset_.size() != 0) {
-      save_binary(fo, col_ptr_, col_data_);
+    // \brief save column access data into stream
+    // \param fo output stream to save to
+    inline void save_col_access(utils::FileStream &fo) const {
+      fo.write(buffered_rowset_);
+      if (buffered_rowset_.size() != 0) {
+        this->save_binary(fo, col_ptr_, col_data_);
+      }
     }
-  }
 
-  // \brief  return 1 with probability p, coin flip
-  inline int sample_binary(double p) {
-    return static_cast<double>(rand())/(static_cast<double>(RAND_MAX)+1.0) < p;
-  }
-  // \brief intialize column data
+    // \brief  return 1 with probability p, coin flip
+    inline int sample_binary(double p) {
+      srand(0);
+      return (static_cast<double>(rand())/(static_cast<double>(RAND_MAX)+1.0)) < p;
+    }
+    // \brief intialize column data
   // \param pkeep probability to keep a row
   inline void init_col_data(float pkeep) {
     buffered_rowset_.clear();
@@ -215,7 +223,7 @@ class FMatrixS: public IFMatrix {
     bst_uint ncol = static_cast<bst_uint>(this->num_col());
     for (bst_uint i = 0; i < ncol; ++i)
       std::sort(&col_data_[0] + col_ptr_[i],
-                &col_data_[0] + col_ptr_[i + 1], SparseBatch::Entry::CmpValue);
+                &col_data_[0] + col_ptr_[i + 1], SparseBatch::Entry::cmp_value);
   }
   virtual void init_col_access(float pkeep = 1.0f) {
     if (this->have_col_access()) return;

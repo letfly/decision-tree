@@ -57,15 +57,14 @@ class Task {
     learner.init_model();
   }
 
-  gboost::learner::DMatrix *data;
   inline void train() {
     const time_t start = time(NULL);
     unsigned long elapsed = 0;
-    learner.check_init(data);
+    learner.check_init(train_data);
     for (int i = 0; i < num_round; ++i) {
       elapsed = (unsigned long)(time(NULL) - start);
       if (!silent) printf("boosting round %d, %lu sec elapsed\n", i, elapsed);
-      learner.update_one_iter(i, *data);
+      learner.update_one_iter(i, *train_data);
       std::string res = learner.eval_one_iter(i, test_data_vecall, eval_data_names);
       fprintf(stderr, "%s\n", res.c_str());
       elapsed = (unsigned long)(time(NULL) - start);
@@ -73,7 +72,15 @@ class Task {
     if (!silent) printf("\nupdating end, %lu sec in all\n", elapsed);
   }
  public:
-  ~Task(void){
+  Task(void) {
+    num_round = 10;
+    save_period = 0;
+
+    silent = 0;
+    eval_train = 0;
+    use_buffer = 1;
+  }
+  ~Task(void) {
     for (size_t i = 0; i < test_data_vec.size(); i++){
       delete test_data_vec[i];
     }

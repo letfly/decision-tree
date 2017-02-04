@@ -1,9 +1,7 @@
 #ifndef UTILS_CONFIG_H_
 #define UTILS_CONFIG_H_
-/**
- * \file gboost_config.h
- * \brief helper class to load in configures from file
- */
+// \file gboost_config.h
+// \brief helper class to load in configures from file
 #define CRT_SECURE_NO_WARNINGS
 #include <string>
 #include "utils/utils.h" // assert, fopen_check
@@ -76,12 +74,10 @@ class ConfigIterator{
     fi = fopen_check(fname, "r");
     ch_buf = fgetc(fi);
   }
-  /** \brief destructor */
+  // \brief destructor
   ~ConfigIterator() {}
-  /**
-   * \brief move iterator to next position
-   * \return true if there is value in next position
-   */
+  // \brief move iterator to next position
+  // \return true if there is value in next position
   inline bool next(void) {
     while (!feof(fi)) {
       get_next_token(s_name);
@@ -92,15 +88,11 @@ class ConfigIterator{
     }
     return false;
   }
-  /**
-   * \brief get current name, called after next returns true
-   * \return current parameter name
-   */
+  // \brief get current name, called after next returns true
+  // \return current parameter name
   inline const char *name(void)const { return s_name; }
-  /**
-   * \brief get current value, called after next returns true
-   * \return current parameter value
-   */
+  // \brief get current value, called after next returns true
+  // \return current parameter value
   inline const char *val(void)const { return s_val; }
 };
 }

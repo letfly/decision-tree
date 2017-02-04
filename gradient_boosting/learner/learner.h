@@ -64,6 +64,16 @@ class BoostLearner {
   struct ModelParam{
     // \brief global bias
     float base_score;
+    // \brief number of features
+    unsigned num_feature;
+    ModelParam(void) {
+      base_score = 0.5f;
+      num_feature = 0;
+    }
+    inline void set_param(const char *name, const char *val) {
+      if (!strcmp("base_score", name)) base_score = static_cast<float>(atof(val));
+      if (!strcmp("bst:num_feature", name)) num_feature = atoi(val);
+    }
   };
   // model parameter
   ModelParam   mparam;
@@ -79,6 +89,8 @@ class BoostLearner {
                   data.info.info, out_preds, ntree_limit);
     // add base margin
     std::vector<float> &preds = *out_preds;
+    for (auto i: preds)
+        printf("predict_raw%f", i);
     const bst_uint ndata = static_cast<bst_uint>(preds.size());
     if (data.info.base_margin.size() != 0) {
       utils::check(preds.size() == data.info.base_margin.size(),
@@ -86,8 +98,9 @@ class BoostLearner {
       for (bst_uint j = 0; j < ndata; ++j)
         preds[j] += data.info.base_margin[j];
     } else {
-      for (bst_uint j = 0; j < ndata; ++j)
+      for (bst_uint j = 0; j < ndata; ++j) {
         preds[j] += mparam.base_score;
+      }
     }
   }
   // temporal storages for prediciton
@@ -107,12 +120,30 @@ class BoostLearner {
     if (gbm_ == NULL) {
       if (!strcmp(name, "booster")) name_gbm_ = val;
       if (!strcmp(name, "objective")) name_obj_ = val;
+      mparam.set_param(name, val);
     }
     if (gbm_ == NULL || obj_ == NULL) {
       cfg_.push_back(std::make_pair(std::string(name), std::string(val)));
     }
   }
-  inline void set_cache_data(const std::vector<DMatrix *> &mats) {}
+  inline void set_cache_data(const std::vector<DMatrix *> &mats) {
+    // estimate feature bound
+    unsigned num_feature = 0;
+    for (size_t i = 0; i < mats.size(); ++i) {
+      bool dupilicate = false;
+      for (size_t j = 0; j < i; ++j) {
+        if (mats[i] == mats[j]) dupilicate = true;
+      }
+      if (dupilicate) continue;
+      num_feature = std::max(num_feature, static_cast<unsigned>(mats[i]->info.num_col()));
+    }
+    printf("mparam=%d,", mparam.num_feature);
+    char str_temp[25];
+    if (num_feature > mparam.num_feature) {
+      utils::sprintf(str_temp, sizeof(str_temp), "%u", num_feature);
+      this->set_param("bst:num_feature", str_temp);
+    }
+  }
   // \brief initialize the model
   inline void init_model(void) {
     // initialize model
@@ -134,6 +165,7 @@ class BoostLearner {
   inline void update_one_iter(int iter, const DMatrix &train) {
     this->predict_raw(train, &preds_);
     obj_->get_gradient(preds_, train.info, iter, &gpair_);
+    printf("do_boost");
     gbm_->do_boost(train.fmat(), train.info.info, &gpair_);
   }
   // \brief evaluate the model for specific iteration
@@ -147,6 +179,7 @@ class BoostLearner {
     std::string res;
     char tmp[256];
     utils::sprintf(tmp, sizeof(tmp), "[%d]", iter);
+    printf("eval_one_iter");
     res = tmp;
     for (size_t i = 0; i < evals.size(); ++i) {
       this->predict_raw(*evals[i], &preds_);

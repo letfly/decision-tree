@@ -67,6 +67,10 @@ struct MetaInfo {
   inline size_t num_row(void) const {
     return info.num_row;
   }
+  // \return number of columns in dataset
+  inline size_t num_col(void) const {
+    return info.num_col;
+  }
 };
 struct DMatrix {
   const int magic;

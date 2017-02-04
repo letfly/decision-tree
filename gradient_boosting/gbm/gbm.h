@@ -210,7 +210,7 @@ class GBLinear : public IGradBooster {
         num_output_group = 1;
       }
       inline void set_param(const char *name, const char *val) {
-        if (!strcmp(name, "bst:num_feature")) num_feature = atoi(val);
+        if (!strcmp(name, "bst:num_feature")) {printf("nnn%s",val);num_feature = atoi(val);}
         if (!strcmp(name, "num_output_group")) num_output_group = atoi(val);
       }
     };
@@ -227,6 +227,7 @@ class GBLinear : public IGradBooster {
 
     // get i-th weight
     inline float* operator[](size_t i) {
+      printf("i=%d,%f", i,weight[i*param.num_output_group]);
       return &weight[i * param.num_output_group];
     }
     // model bias
@@ -240,6 +241,7 @@ class GBLinear : public IGradBooster {
   inline void pred(const RowBatch::Inst &inst, float *preds) {
     for (int gid = 0; gid < model.param.num_output_group; ++gid) {
       float psum = model.bias()[gid];
+      printf("pred=%f", psum);
       for (bst_uint i = 0; i < inst.length; ++i) {
         psum += inst[i].fvalue * model[inst[i].index][gid];
       }
@@ -279,9 +281,12 @@ class GBLinear : public IGradBooster {
       for (bst_uint i = 0; i < nsize; ++i) {
         const size_t ridx = batch.base_rowid + i;
         // loop over output groups
-        for (int gid = 0; gid < ngroup; ++gid)
+        for (int gid = 0; gid < ngroup; ++gid) {
+          printf("predictpred");
           this->pred(batch[i], &preds[ridx * ngroup]);
+        }
       }
+      for (auto i: preds) printf("predict=%f", i);
     }
   }
 
@@ -305,6 +310,7 @@ class GBLinear : public IGradBooster {
       bst_float dw = static_cast<bst_float>(
           param.learning_rate * param.calc_delta_bias(sum_grad, sum_hess, model.bias()[gid]));
       model.bias()[gid] += dw;
+      printf("dw=%f", dw);
       // update grad value
       for (bst_uint i = 0; i < ndata; ++i) {
         bst_gpair &p = gpair[rowset[i] * ngroup + gid];

@@ -52,7 +52,7 @@ class DMatrixSimple: public learner::DMatrix {
     fmat_ = new FMatrixS(new OneBatchIter(this));
     this->clear();
   }
-  // \brief clear the storage */
+  // \brief clear the storage
   inline void clear(void) {
     row_ptr_.clear();
     row_ptr_.push_back(0);
@@ -77,6 +77,7 @@ class DMatrixSimple: public learner::DMatrix {
     info.load_binary(fs);
     FMatrixS::load_binary(fs, &row_ptr_, &row_data_);
     fmat_->load_col_access(fs);
+    printf("load_binary");
   }
   //
   inline void save_binary(const char* fname, bool silent = false) const {
@@ -127,6 +128,7 @@ class DMatrixSimple: public learner::DMatrix {
 
     info.labels.push_back(label);
     this->add_row(feats);
+    printf("load_text");
   }
 
   // If binary buffer exists, it will reads from binary buffer, otherwise,
