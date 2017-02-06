@@ -102,6 +102,10 @@ struct BoosterInfo {
 
   // \brief set fold indicator
   std::vector<unsigned> fold_index;
+  // \brief get root of ith instance
+  inline unsigned get_root(size_t i) const {
+    return root_index.size() == 0 ? 0 : root_index[i];
+  }
 };
 
 

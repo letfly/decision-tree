@@ -163,25 +163,24 @@ class FMatrixS: public IFMatrix {
     size_t nrow = ptr.size() - 1;
     fo.write(&nrow, sizeof(size_t));
     fo.write(utils::begin_ptr(ptr), ptr.size() * sizeof(size_t));
-    if (data.size() != 0) {
+    if (data.size() != 0)
         fo.write(utils::begin_ptr(data), data.size() * sizeof(RowBatch::Entry));
-      }
+  }
+  // \brief save column access data into stream
+  // \param fo output stream to save to
+  inline void save_col_access(utils::FileStream &fo) const {
+    fo.write(buffered_rowset_);
+    if (buffered_rowset_.size() != 0) {
+      this->save_binary(fo, col_ptr_, col_data_);
     }
-    // \brief save column access data into stream
-    // \param fo output stream to save to
-    inline void save_col_access(utils::FileStream &fo) const {
-      fo.write(buffered_rowset_);
-      if (buffered_rowset_.size() != 0) {
-        this->save_binary(fo, col_ptr_, col_data_);
-      }
-    }
+  }
 
-    // \brief  return 1 with probability p, coin flip
-    inline int sample_binary(double p) {
-      srand(0);
-      return (static_cast<double>(rand())/(static_cast<double>(RAND_MAX)+1.0)) < p;
-    }
-    // \brief intialize column data
+  // \brief  return 1 with probability p, coin flip
+  inline int sample_binary(double p) {
+    srand(0);
+    return (static_cast<double>(rand())/(static_cast<double>(RAND_MAX)+1.0)) < p;
+  }
+  // \brief intialize column data
   // \param pkeep probability to keep a row
   inline void init_col_data(float pkeep) {
     buffered_rowset_.clear();

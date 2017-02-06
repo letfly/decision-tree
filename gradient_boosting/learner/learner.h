@@ -126,6 +126,12 @@ class BoostLearner {
       cfg_.push_back(std::make_pair(std::string(name), std::string(val)));
     }
   }
+  // \brief add internal cache space for mat, this can speedup prediction for matrix,
+  //        please cache prediction for training and eval data
+  //    warning: if the model is loaded from file from some previous training history
+  //             set cache data must be called with exactly SAME 
+  //             data matrices to continue training otherwise it will cause error
+  // \param mats array of pointers to matrix whose prediction result need to be cached
   inline void set_cache_data(const std::vector<DMatrix *> &mats) {
     // estimate feature bound
     unsigned num_feature = 0;
