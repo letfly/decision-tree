@@ -1,5 +1,10 @@
 #ifndef TREE_MODEL_H_
 #define TREE_MODEL_H_
+#include <cstdlib>
+#include <vector>
+#include "data.h"
+#include "utils/utils.h"
+
 namespace gboost {
 namespace tree {
 // \brief template class of TreeModel 
@@ -55,6 +60,35 @@ class TreeModel {
     inline float leaf_value(void) const {
       return (this->info_).leaf_value;
     }
+    // \brief set the leaf value of the node
+    // \param value leaf value
+    // \param right right index, could be used to store 
+    //        additional information
+    inline void set_leaf(float value, int right = -1) {
+      (this->info_).leaf_value = value;
+      this->cleft_ = -1;
+      this->cright_ = right;
+    }
+    // pointer to parent, highest bit is used to
+    // indicate whether it's a left child or not
+    int parent_;
+    // set parent
+    inline void set_parent(int pidx, bool is_left_child = true) {
+      if (is_left_child) pidx |= (1U << 31);
+      this->parent_ = pidx;
+    }
+    // \brief get parent of the node
+    inline int parent(void) const {
+      return parent_ & ((1U << 31) - 1);
+    }
+    // \brief whether current node is root
+    inline bool is_root(void) const {
+      return parent_ == -1;
+    }
+    // \brief whether current node is left child
+    inline bool is_left_child(void) const {
+      return (parent_ & (1U << 31)) != 0;
+    }
   };
   // vector of nodes
   std::vector<Node> nodes;
@@ -66,9 +100,25 @@ class TreeModel {
     // \brief leaf vector size, used for vector tree
     // used to store more than one dimensional information in tree
     int size_leaf_vector;
+    // \brief number of start root
+    int num_roots;
+    // \brief  number of features used for tree construction
+    int num_feature;
+    // \brief set parameters from outside 
+    // \param name name of the parameter
+    // \param val  value of the parameter
+    inline void set_param(const char *name, const char *val) {
+      if (!strcmp("num_roots", name)) num_roots = atoi(val);
+      if (!strcmp("num_feature", name)) num_feature = atoi(val);
+      if (!strcmp("size_leaf_vector", name)) size_leaf_vector = atoi(val);
+    }
+    // \brief total number of nodes
+    int num_nodes;
+    // \brief number of deleted nodes
+    int num_deleted;
   };
-  // \brief model parameter
-  Param param;
+  // stats of nodes
+  std::vector<TNodeStat> stats;
  public:
   // \brief get node given nid
   inline Node &operator[](int nid) {
@@ -78,15 +128,87 @@ class TreeModel {
   inline const Node &operator[](int nid) const {
     return nodes[nid];
   }
+  // \brief get node statistics given nid
+  inline TNodeStat &stat(int nid) {
+    return stats[nid];
+  }
   // \brief get leaf vector given nid
   inline bst_float* leafvec(int nid) {
     if (leaf_vector.size() == 0) return NULL;
     return &leaf_vector[nid * param.size_leaf_vector];
   }
+  // \brief model parameter
+  Param param;
+  // \brief initialize the model
+  inline void init_model(void) {
+    param.num_nodes = param.num_roots;
+    nodes.resize(param.num_nodes);
+    stats.resize(param.num_nodes);
+    leaf_vector.resize(param.num_nodes * param.size_leaf_vector, 0.0f);
+    for (int i = 0; i < param.num_nodes; i ++) {
+      nodes[i].set_leaf(0.0f);
+      nodes[i].set_parent(-1);
+    }
+  }
+  // \brief get current depth
+  // \param nid node id
+  // \param pass_rchild whether right child is not counted in depth
+  inline int get_depth(int nid, bool pass_rchild = false) const {
+    int depth = 0;
+    while (!nodes[nid].is_root()) {
+      if (!pass_rchild || nodes[nid].is_left_child()) ++depth;
+      nid = nodes[nid].parent();
+    }
+    return depth;
+  }
+  // \brief number of extra nodes besides the root
+  inline int num_extra_nodes(void) const {
+    return param.num_nodes - param.num_roots - param.num_deleted;
+  }
+  // \brief get maximum depth
+  // \param nid node id
+  inline int max_depth(int nid) const {
+    if (nodes[nid].is_leaf()) return 0;
+    return std::max(max_depth(nodes[nid].cleft())+1,
+                    max_depth(nodes[nid].cright())+1);
+  }
+  // \brief get maximum depth
+  inline int max_depth(void) {
+    int maxd = 0;
+    for (int i = 0; i < param.num_roots; ++i) {
+      maxd = std::max(maxd, max_depth(i));
+    }
+    return maxd;
+  }
+  // free node space, used during training process
+  std::vector<int> deleted_nodes;
+  // delete a tree node
+  inline void delete_node(int nid) {
+    utils::assert(nid >= param.num_roots, "can not delete root");
+    deleted_nodes.push_back(nid);
+    nodes[nid].set_parent(-1);
+    ++param.num_deleted;
+  }
+  // \brief change a non leaf node to a leaf node, delete its children
+  // \param rid node id of the node
+  // \param new leaf value
+  inline void change_to_leaf(int rid, float value) {
+    utils::assert(nodes[nodes[rid].cleft() ].is_leaf(),
+                  "can not delete a non termial child");
+    utils::assert(nodes[nodes[rid].cright()].is_leaf(),
+                  "can not delete a non termial child");
+    this->delete_node(nodes[rid].cleft());
+    this->delete_node(nodes[rid].cright());
+    nodes[rid].set_leaf(value);
+  }
 };
 
 // \brief node statistics used in regression tree
 struct RTreeNodeStat {
+  // \brief number of child that is leaf node known up to now
+  int   leaf_child_cnt;
+  // \brief weight of current node
+  float base_weight;
 };
 
 class RegTree: public TreeModel<bst_float, RTreeNodeStat> {

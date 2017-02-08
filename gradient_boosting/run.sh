@@ -1,5 +1,5 @@
 #!/bin/bash
-g++ -Wall -O3 -msse2 main.cc io/io.cc -o main -I ./
+g++ -Wall -O3 -msse2 main.cc io/io.cc -o main -I ./ -g -std=c++11
 # Map the data to features
 #python examples/mapfeat.py
 # Split train and test

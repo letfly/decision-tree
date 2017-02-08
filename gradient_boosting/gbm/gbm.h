@@ -1,7 +1,7 @@
 #ifndef GBM_GBM_H_
 #define GBM_GBM_H_
 #include "data.h" // RowBatch, bst_gpair
-#include "tree/updater.h" //IUpdater
+#include "tree/updater.h" //IUpdater, CreateUpdater
 #include "tree/model.h" // RegTree
 #include "utils/iterator.h" // IIterator
 
@@ -23,7 +23,7 @@ class IGradBooster {
   // \param buffer_offset buffer index offset of these instances, if equals -1
   //        this means we do not have buffer index allocated to the gbm
   //  a buffer index is assigned to each instance that requires repeative prediction
-  //  the size of buffer is set by convention using IGradBooster.SetParam("num_pbuffer","size")
+  //  the size of buffer is set by convention using IGradBooster.set_param("num_pbuffer","size")
   // \param info extra side information that may be needed for prediction
   // \param out_preds output vector to hold the predictions
   // \param ntree_limit limit the number of trees used in prediction, when it equals 0, this means 
@@ -43,7 +43,8 @@ class IGradBooster {
                        const BoosterInfo &info,
                        std::vector<bst_gpair> *in_gpair) = 0;
 };
-class GBTree : public IGradBooster {
+// \brief gradient boosted tree
+class GBTree : public IGradBooster { // 13h52min21s
  private:
   // configurations for tree
   std::vector< std::pair<std::string, std::string> > cfg;
@@ -53,6 +54,9 @@ class GBTree : public IGradBooster {
   // --- data structure ---
   // \brief training parameters
   struct TrainParam {
+    // \brief number of parallel trees constructed each iteration
+    //  use this option to support boosted random forest
+    int num_parallel_tree;
     // \brief tree updater sequence
     std::string updater_seq;
     // \brief whether updater is already initialized
@@ -105,7 +109,6 @@ class GBTree : public IGradBooster {
     // \param name name of the parameter
     // \param val  value of the parameter
     inline void set_param(const char *name, const char *val) {
-      using namespace std;
       if (!strcmp("bst:num_roots", name)) num_roots = atoi(val);
       if (!strcmp("bst:num_feature", name)) num_feature = atoi(val);
       if (!strcmp("num_pbuffer", name)) num_pbuffer = atol(val);
@@ -226,7 +229,6 @@ class GBTree : public IGradBooster {
       const RowBatch &batch = iter->value();
       // parallel over local batch
       const bst_uint nsize = static_cast<bst_uint>(batch.size);
-      #pragma omp parallel for schedule(static)
       for (bst_uint i = 0; i < nsize; ++i) {
         const int tid = 0;
         tree::RegTree::FVec &feats = thread_temp[tid];
@@ -237,15 +239,75 @@ class GBTree : public IGradBooster {
           this->pred(batch[i],
                      buffer_offset < 0 ? -1 : buffer_offset + ridx,
                      gid, info.get_root(ridx), &feats,
-                     &preds[ridx * mparam.num_output_group + gid], stride, 
+                     &preds[ridx * mparam.num_output_group + gid], stride,
                      ntree_limit);
         }
       }
     }
   }
+  // initialize updater before using them
+  inline void init_updater(void) {
+    if (tparam.updater_initialized != 0) return;
+    for (size_t i = 0; i < updaters.size(); ++i)
+      delete updaters[i];
+    updaters.clear();
+    std::string tval = tparam.updater_seq;
+    char *pstr;
+    pstr = std::strtok(&tval[0], ",");
+    while (pstr != NULL) {
+      updaters.push_back(tree::CreateUpdater(pstr));
+      for (size_t j = 0; j < cfg.size(); ++j)
+        // set parameters
+        updaters.back()->set_param(cfg[j].first.c_str(), cfg[j].second.c_str());
+      pstr = std::strtok(NULL, ",");
+    }
+    tparam.updater_initialized = 1;
+  }
+  // do group specific group
+  inline void boost_new_trees(const std::vector<bst_gpair> &gpair,
+                            IFMatrix *p_fmat,
+                            const BoosterInfo &info,
+                            int bst_group) {
+    this->init_updater();
+    // create the trees
+    std::vector<tree::RegTree *> new_trees;
+    for (int i = 0; i < tparam.num_parallel_tree; ++i) {
+      new_trees.push_back(new tree::RegTree());
+      for (size_t j = 0; j < cfg.size(); ++j) {
+        new_trees.back()->param.set_param(cfg[j].first.c_str(), cfg[j].second.c_str());
+      }
+      new_trees.back()->init_model();
+    }
+    // update the trees
+    for (size_t i = 0; i < updaters.size(); ++i) {
+      updaters[i]->update(gpair, p_fmat, info, new_trees);
+    }
+    // push back to model
+    for (size_t i = 0; i < new_trees.size(); ++i) {
+      trees.push_back(new_trees[i]);
+      tree_info.push_back(bst_group);
+    }
+    mparam.num_trees += tparam.num_parallel_tree;
+  }
   virtual void do_boost(IFMatrix *p_fmat,
                         const BoosterInfo &info,
                         std::vector<bst_gpair> *in_gpair) {
+    const std::vector<bst_gpair> &gpair = *in_gpair;
+    if (mparam.num_output_group == 1) {
+      this->boost_new_trees(gpair, p_fmat, info, 0);
+    } else {
+      const int ngroup = mparam.num_output_group;
+      utils::check(gpair.size() % ngroup == 0,
+                   "must have exactly ngroup*nrow gpairs");
+      std::vector<bst_gpair> tmp(gpair.size()/ngroup);
+      for (int gid = 0; gid < ngroup; ++gid) {
+        bst_uint nsize = static_cast<bst_uint>(tmp.size());
+        for (bst_uint i = 0; i < nsize; ++i) {
+          tmp[i] = gpair[i * ngroup + gid];
+        }
+        this->boost_new_trees(tmp, p_fmat, info, gid);
+      }
+    }
   }
 };
 class GBLinear : public IGradBooster {
@@ -330,7 +392,7 @@ class GBLinear : public IGradBooster {
 
     // get i-th weight
     inline float* operator[](size_t i) {
-      printf("i=%d,%f", i,weight[i*param.num_output_group]);
+      printf("i=%lu,%f", i,weight[i*param.num_output_group]);
       return &weight[i * param.num_output_group];
     }
     // model bias
@@ -455,7 +517,6 @@ class GBLinear : public IGradBooster {
 };
 
 IGradBooster* create_grad_booster(const char *name) {
-  //if (!strcmp("gbtree", name)) return new GBTree();
   if (!strcmp("gblinear", name)) return new GBLinear();
   if (!strcmp("gbtree", name)) return new GBTree();
   utils::error("unknown booster type: %s", name);
