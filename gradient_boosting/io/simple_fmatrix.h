@@ -1,6 +1,7 @@
 #ifndef IO_SIMPLE_FMATRIX_H_
 #define IO_SIMPLE_FMATRIX_H_
 #include "data.h" // IFMatrix, RowBatch
+#include "utils/random.h" // sample_binary
 #include "utils/iterator.h" // IIterator
 #include "utils/stream.h" // FileStream
 #include "utils/utils.h" // check, begin_ptr
@@ -124,6 +125,16 @@ class FMatrixS: public IFMatrix {
   virtual const std::vector<bst_uint> &buffered_rowset(void) const {
     return buffered_rowset_;
   }
+  // \brief get column size
+  virtual size_t get_col_size(size_t cidx) const {
+    return col_ptr_[cidx+1] - col_ptr_[cidx];
+  }
+  // \brief colmun based iterator
+  virtual utils::IIterator<ColBatch> *col_iterator(const std::vector<bst_uint> &fset) {
+    col_iter_.col_index_ = fset;
+    col_iter_.set_batch(col_ptr_, col_data_);
+    return &col_iter_;
+  }
  public:
   FMatrixS(utils::IIterator<RowBatch> *iter) { this->iter_ = iter; }
   // \brief load data from binary stream
@@ -175,11 +186,6 @@ class FMatrixS: public IFMatrix {
     }
   }
 
-  // \brief  return 1 with probability p, coin flip
-  inline int sample_binary(double p) {
-    srand(0);
-    return (static_cast<double>(rand())/(static_cast<double>(RAND_MAX)+1.0)) < p;
-  }
   // \brief intialize column data
   // \param pkeep probability to keep a row
   inline void init_col_data(float pkeep) {
@@ -192,7 +198,7 @@ class FMatrixS: public IFMatrix {
     while (iter_->next()) {
       const RowBatch &batch = iter_->value();
       for (size_t i = 0; i < batch.size; ++i) {
-        if (pkeep == 1.0f || sample_binary(pkeep)) {
+        if (pkeep == 1.0f || random::sample_binary(pkeep)) {
           buffered_rowset_.push_back(static_cast<bst_uint>(batch.base_rowid+i));
           RowBatch::Inst inst = batch[i];
           for (bst_uint j = 0; j < inst.length; ++j)
@@ -227,6 +233,11 @@ class FMatrixS: public IFMatrix {
   virtual void init_col_access(float pkeep = 1.0f) {
     if (this->have_col_access()) return;
     this->init_col_data(pkeep);
+  }
+  // \brief get column density
+  virtual float get_col_density(size_t cidx) const {
+    size_t nmiss = buffered_rowset_.size() - (col_ptr_[cidx+1] - col_ptr_[cidx]);
+    return 1.0f - (static_cast<float>(nmiss)) / buffered_rowset_.size();
   }
 };
 }

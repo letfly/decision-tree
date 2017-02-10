@@ -9,6 +9,9 @@ namespace gboost {
 typedef unsigned bst_uint;
 // \brief float type, used for storing statistics
 typedef float bst_float;
+const float rt_eps = 1e-5f;
+// min gap between feature values to allow a split happen
+const float rt_2eps = rt_eps * 2.0f;
 
 struct SparseBatch {
   // \brief an entry of sparse vector
@@ -85,6 +88,17 @@ class IFMatrix {
 
   // \brief reference of buffered rowset
   virtual const std::vector<bst_uint> &buffered_rowset(void) const = 0;
+  // \return number of columns in the FMatrix
+  virtual size_t num_col(void) const = 0;
+  // \brief get number of non-missing entries in column
+  virtual size_t get_col_size(size_t cidx) const = 0;
+  // \brief get column density  
+  virtual float get_col_density(size_t cidx) const = 0;  
+
+  // \brief get the column iterator associated with FMatrix with subset of column features 
+  // \param fset is the list of column index set that must be contained in the returning Column iterator
+  // \return the column iterator, initialized so that it reads the elements in fset
+  virtual utils::IIterator<ColBatch> *col_iterator(const std::vector<bst_uint> &fset) = 0;
 };
 
 // Extra information that might needed by gbm and tree module

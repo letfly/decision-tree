@@ -17,8 +17,6 @@ class TreeModel {
    private:
     // split feature index, left split or right split depends on the highest bit
     unsigned sindex_;
-    // pointer to left, right
-    int cleft_, cright_;
     // \brief in leaf node, we have weights, in non-leaf nodes, 
     //        we have split condition 
     union Info{
@@ -32,6 +30,8 @@ class TreeModel {
     inline TSplitCond split_cond(void) const {
       return (this->info_).split_cond;
     }
+    // pointer to left, right
+    int cleft_, cright_;
     // \brief index of left child
     inline int cleft(void) const {
       return this->cleft_;
@@ -89,6 +89,16 @@ class TreeModel {
     inline bool is_left_child(void) const {
       return (parent_ & (1U << 31)) != 0;
     }
+    // \brief set split condition of current node 
+    // \param split_index feature index to split
+    // \param split_cond  split condition
+    // \param default_left the default direction when feature is unknown
+    inline void set_split(unsigned split_index, TSplitCond split_cond,
+                          bool default_left = false) {
+      if (default_left) split_index |= (1U << 31);
+      this->sindex_ = split_index;
+      (this->info_).split_cond = split_cond;
+    }
   };
   // vector of nodes
   std::vector<Node> nodes;
@@ -119,7 +129,28 @@ class TreeModel {
   };
   // stats of nodes
   std::vector<TNodeStat> stats;
+  // allocate a new node,
+  // !!!!!! NOTE: may cause BUG here, nodes.resize
+  inline int alloc_node(void) {
+    if (param.num_deleted != 0) {
+      int nd = deleted_nodes.back();
+      deleted_nodes.pop_back();
+      --param.num_deleted;
+      return nd;
+    }
+    int nd = param.num_nodes++;
+    utils::check(param.num_nodes < std::numeric_limits<int>::max(),
+                 "number of nodes in the tree exceed 2^31");
+    nodes.resize(param.num_nodes);
+    stats.resize(param.num_nodes);
+    leaf_vector.resize(param.num_nodes * param.size_leaf_vector); 
+    return nd;
+  }
  public:
+  TreeModel(void) {
+    param.num_nodes = 1;
+    param.num_roots = 1;
+  }
   // \brief get node given nid
   inline Node &operator[](int nid) {
     return nodes[nid];
@@ -175,9 +206,8 @@ class TreeModel {
   // \brief get maximum depth
   inline int max_depth(void) {
     int maxd = 0;
-    for (int i = 0; i < param.num_roots; ++i) {
+    for (int i = 0; i < param.num_roots; ++i)
       maxd = std::max(maxd, max_depth(i));
-    }
     return maxd;
   }
   // free node space, used during training process
@@ -201,14 +231,28 @@ class TreeModel {
     this->delete_node(nodes[rid].cright());
     nodes[rid].set_leaf(value);
   }
+  // \brief add child nodes to node
+  // \param nid node id to add childs
+  inline void add_childs(int nid) {
+    int pleft  = this->alloc_node();
+    int pright = this->alloc_node();
+    nodes[nid].cleft_  = pleft;
+    nodes[nid].cright_ = pright;
+    nodes[nodes[nid].cleft() ].set_parent(nid, true);
+    nodes[nodes[nid].cright()].set_parent(nid, false);
+  }
 };
 
 // \brief node statistics used in regression tree
 struct RTreeNodeStat {
   // \brief number of child that is leaf node known up to now
-  int   leaf_child_cnt;
+  int leaf_child_cnt;
   // \brief weight of current node
   float base_weight;
+  // \brief loss chg caused by current split
+  float loss_chg;
+  // \brief sum of hessian values, used to measure coverage of data
+  float sum_hess;
 };
 
 class RegTree: public TreeModel<bst_float, RTreeNodeStat> {

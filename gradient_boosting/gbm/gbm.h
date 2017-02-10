@@ -63,6 +63,7 @@ class GBTree : public IGradBooster { // 13h52min21s
     int updater_initialized;
     // construction
     TrainParam(void) {
+      num_parallel_tree = 1;
       updater_seq = "grow_colmaker,prune";
       updater_initialized = 0;
     }
@@ -271,11 +272,11 @@ class GBTree : public IGradBooster { // 13h52min21s
     this->init_updater();
     // create the trees
     std::vector<tree::RegTree *> new_trees;
+    printf("tparam.num_parallel_tree=%d", tparam.num_parallel_tree);
     for (int i = 0; i < tparam.num_parallel_tree; ++i) {
       new_trees.push_back(new tree::RegTree());
-      for (size_t j = 0; j < cfg.size(); ++j) {
+      for (size_t j = 0; j < cfg.size(); ++j)
         new_trees.back()->param.set_param(cfg[j].first.c_str(), cfg[j].second.c_str());
-      }
       new_trees.back()->init_model();
     }
     // update the trees
@@ -313,7 +314,7 @@ class GBTree : public IGradBooster { // 13h52min21s
 class GBLinear : public IGradBooster {
  private:
   // training parameter
-  struct ParamTrain {
+  struct TrainParam {
     // \brief learning_rate
     float learning_rate;
     // \brief regularization weight for L2 norm
@@ -323,7 +324,7 @@ class GBLinear : public IGradBooster {
     // \brief regularization weight for L2 norm in bias
     float reg_lambda_bias;
     // parameter
-    ParamTrain(void) {
+    TrainParam(void) {
       reg_alpha = 0.0f;
       reg_lambda = 0.0f;
       reg_lambda_bias = 0.0f;
@@ -358,7 +359,7 @@ class GBLinear : public IGradBooster {
     }
   };
   // training parameter
-  ParamTrain param;
+  TrainParam param;
 
   // model for linear booster
   class Model {
