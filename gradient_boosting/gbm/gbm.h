@@ -142,11 +142,10 @@ class GBTree : public IGradBooster { // 13h52min21s
   std::vector<int> tree_info;
  public:
   virtual void set_param(const char *name, const char *val) {
-    if (!strncmp(name, "bst:", 4)) {
-      cfg.push_back(std::make_pair(std::string(name+4), std::string(val)));
-      // set into updaters, if already intialized
-      for (size_t i = 0; i < updaters.size(); ++i)
-        updaters[i]->set_param(name+4, val);
+    cfg.push_back(std::make_pair(std::string(name), std::string(val)));
+    // set into updaters, if already intialized
+    for (size_t i = 0; i < updaters.size(); ++i) {
+      updaters[i]->set_param(name, val);
     }
     if (!strcmp(name, "silent")) this->set_param("bst:silent", val);
     tparam.set_param(name, val);
@@ -272,7 +271,6 @@ class GBTree : public IGradBooster { // 13h52min21s
     this->init_updater();
     // create the trees
     std::vector<tree::RegTree *> new_trees;
-    printf("tparam.num_parallel_tree=%d", tparam.num_parallel_tree);
     for (int i = 0; i < tparam.num_parallel_tree; ++i) {
       new_trees.push_back(new tree::RegTree());
       for (size_t j = 0; j < cfg.size(); ++j)
@@ -417,7 +415,7 @@ class GBLinear : public IGradBooster {
  public:
   // set model parameters
   virtual void set_param(const char *name, const char *val) {
-    if (!strncmp(name, "bst:", 4)) param.set_param(name + 4, val);
+    param.set_param(name, val);
     if (model.weight.size() == 0) model.param.set_param(name, val);
   }
   virtual void init_model(void) {

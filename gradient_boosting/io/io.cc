@@ -6,7 +6,6 @@
 namespace gboost {
 namespace io {
 learner::DMatrix* load_data_matrix(const char *fname, bool silent, bool savebuffer) {
-  printf("%s", fname);
   int magic;
   utils::FileStream fs(utils::fopen_check(fname, "rb"));
   utils::check(fs.read(&magic, sizeof(magic))!=0, "invalid input file format");

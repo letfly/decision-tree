@@ -89,8 +89,6 @@ class BoostLearner {
                   data.info.info, out_preds, ntree_limit);
     // add base margin
     std::vector<float> &preds = *out_preds;
-    for (auto i: preds)
-        printf("predict_raw%f", i);
     const bst_uint ndata = static_cast<bst_uint>(preds.size());
     if (data.info.base_margin.size() != 0) {
       utils::check(preds.size() == data.info.base_margin.size(),
@@ -143,7 +141,6 @@ class BoostLearner {
       if (dupilicate) continue;
       num_feature = std::max(num_feature, static_cast<unsigned>(mats[i]->info.num_col()));
     }
-    printf("mparam=%d,", mparam.num_feature);
     char str_temp[25];
     if (num_feature > mparam.num_feature) {
       utils::sprintf(str_temp, sizeof(str_temp), "%u", num_feature);
@@ -171,7 +168,6 @@ class BoostLearner {
   inline void update_one_iter(int iter, const DMatrix &train) {
     this->predict_raw(train, &preds_);
     obj_->get_gradient(preds_, train.info, iter, &gpair_);
-    printf("do_boost");
     gbm_->do_boost(train.fmat(), train.info.info, &gpair_);
   }
   // \brief evaluate the model for specific iteration
@@ -185,7 +181,6 @@ class BoostLearner {
     std::string res;
     char tmp[256];
     utils::sprintf(tmp, sizeof(tmp), "[%d]", iter);
-    printf("eval_one_iter");
     res = tmp;
     for (size_t i = 0; i < evals.size(); ++i) {
       this->predict_raw(*evals[i], &preds_);

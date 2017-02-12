@@ -77,7 +77,6 @@ class DMatrixSimple: public learner::DMatrix {
     info.load_binary(fs);
     FMatrixS::load_binary(fs, &row_ptr_, &row_data_);
     fmat_->load_col_access(fs);
-    printf("load_binary");
   }
   //
   inline void save_binary(const char* fname, bool silent = false) const {

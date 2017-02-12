@@ -76,6 +76,9 @@ class TrainParam {
       return -threshold_L1(sum_grad, reg_alpha) / (sum_hess + reg_lambda);
     }
   }
+  inline void set_param(const char *name, const char *val) {
+    if (!strcmp(name, "max_depth")) max_depth = atoi(val);
+  }
 };
 
 // \brief interface of tree update module, that performs update of a tree
@@ -171,7 +174,6 @@ class TreePruner: public IUpdater {
   inline void do_prune(RegTree &tree) {
     int npruned = 0;
     // initialize auxiliary statistics
-    printf("do_prune=%d", tree.param.num_nodes);
     for (int nid = 0; nid < tree.param.num_nodes; ++nid)
       tree.stat(nid).leaf_child_cnt = 0;
     for (int nid = 0; nid < tree.param.num_nodes; ++nid)
@@ -245,23 +247,6 @@ class ColMaker: public IUpdater {
     // \brief loss of this node, without split
     bst_float root_gain;
   };
- public:
-  // set training parameter
-  virtual void set_param(const char *name, const char *val) {}
-  virtual void update(const std::vector<bst_gpair> &gpair,
-                      IFMatrix *p_fmat,
-                      const BoosterInfo &info,
-                      const std::vector<RegTree*> &trees) {
-    // rescale learning rate according to size of trees
-    float lr = param.learning_rate;
-    param.learning_rate = lr / trees.size();
-    // build tree
-    for (size_t i = 0; i < trees.size(); ++i) {
-      Builder builder(param);
-      builder.update(gpair, p_fmat, info, trees[i]);
-    }
-    param.learning_rate = lr;
-  }
   // actual builder that runs the algorithm
   class Builder{
    private:
@@ -341,6 +326,40 @@ class ColMaker: public IUpdater {
     std::vector<int> qexpand_;
     // number of omp thread used during training
     int nthread;
+    // \brief initialize the base_weight, root_gain, and NodeEntry for all the new nodes in qexpand
+    inline void init_new_node(const std::vector<int> &qexpand,
+                              const std::vector<bst_gpair> &gpair,
+                              const IFMatrix &fmat,
+                              const BoosterInfo &info,
+                              const RegTree &tree) {
+      {// setup statistics space for each tree node
+        for (size_t i = 0; i < stemp.size(); ++i) {
+          stemp[i].resize(tree.param.num_nodes, ThreadEntry(param));
+        }
+        snode.resize(tree.param.num_nodes, NodeEntry(param));
+      }
+      const std::vector<bst_uint> &rowset = fmat.buffered_rowset();
+      // setup position
+      const bst_uint ndata = static_cast<bst_uint>(rowset.size());
+      for (bst_uint i = 0; i < ndata; ++i) {
+        const bst_uint ridx = rowset[i];
+        const int tid = 0;
+        if (position[ridx] < 0) continue;
+        stemp[tid][position[ridx]].stats.add(gpair, info, ridx);
+      }
+      // sum the per thread statistics together
+      for (size_t j = 0; j < qexpand.size(); ++j) {
+        const int nid = qexpand[j];
+        TStats stats(param);
+        for (size_t tid = 0; tid < stemp.size(); ++tid) {
+          stats.add(stemp[tid][nid].stats);
+        }
+        // update node statistics
+        snode[nid].stats = stats;
+        snode[nid].root_gain = static_cast<float>(stats.calc_gain(param));
+        snode[nid].weight = static_cast<float>(stats.calc_weight(param));
+      }
+    }
     // find splits at current level, do split per level
     inline void find_split(int depth,
                           const std::vector<int> &qexpand,
@@ -363,7 +382,7 @@ class ColMaker: public IUpdater {
         const int batch_size = std::max(static_cast<int>(nsize / this->nthread / 32), 1);
         for (bst_uint i = 0; i < nsize; ++i) {
           const bst_uint fid = batch.col_index[i];
-          const int tid = 1;
+          const int tid = 0;
           const ColBatch::Inst c = batch[i];
           if (param.need_forward_search(p_fmat->get_col_density(fid))) {
             this->enumerate_split(c.data, c.data + c.length, +1,
@@ -487,40 +506,6 @@ class ColMaker: public IUpdater {
         snode[nid].stats.SetLeafVec(param, p_tree->leafvec(nid));
       }
     }
-    // \brief initialize the base_weight, root_gain, and NodeEntry for all the new nodes in qexpand
-    inline void init_new_node(const std::vector<int> &qexpand,
-                              const std::vector<bst_gpair> &gpair,
-                              const IFMatrix &fmat,
-                              const BoosterInfo &info,
-                              const RegTree &tree) {
-      {// setup statistics space for each tree node
-        for (size_t i = 0; i < stemp.size(); ++i) {
-          stemp[i].resize(tree.param.num_nodes, ThreadEntry(param));
-        }
-        snode.resize(tree.param.num_nodes, NodeEntry(param));
-      }
-      const std::vector<bst_uint> &rowset = fmat.buffered_rowset();
-      // setup position
-      const bst_uint ndata = static_cast<bst_uint>(rowset.size());
-      for (bst_uint i = 0; i < ndata; ++i) {
-        const bst_uint ridx = rowset[i];
-        const int tid = 1;
-        if (position[ridx] < 0) continue;
-        stemp[tid][position[ridx]].stats.add(gpair, info, ridx);
-      }
-      // sum the per thread statistics together
-      for (size_t j = 0; j < qexpand.size(); ++j) {
-        const int nid = qexpand[j];
-        TStats stats(param);
-        for (size_t tid = 0; tid < stemp.size(); ++tid) {
-          stats.add(stemp[tid][nid].stats);
-        }
-        // update node statistics
-        snode[nid].stats = stats;
-        snode[nid].root_gain = static_cast<float>(stats.calc_gain(param));
-        snode[nid].weight = static_cast<float>(stats.calc_weight(param));
-      }
-    }
     // enumerate the split values of specific feature
     inline void enumerate_split(const ColBatch::Entry *begin,
                                const ColBatch::Entry *end,
@@ -575,6 +560,25 @@ class ColMaker: public IUpdater {
       }
     }
   };
+ public:
+  // set training parameter
+  virtual void set_param(const char *name, const char *val) {
+    param.set_param(name, val);
+  }
+  virtual void update(const std::vector<bst_gpair> &gpair,
+                      IFMatrix *p_fmat,
+                      const BoosterInfo &info,
+                      const std::vector<RegTree*> &trees) {
+    // rescale learning rate according to size of trees
+    float lr = param.learning_rate;
+    param.learning_rate = lr / trees.size();
+    // build tree
+    for (size_t i = 0; i < trees.size(); ++i) {
+      Builder builder(param);
+      builder.update(gpair, p_fmat, info, trees[i]);
+    }
+    param.learning_rate = lr;
+  }
 };
 // \brief core statistics used for tree construction
 struct GradStats {

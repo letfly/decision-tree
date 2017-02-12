@@ -54,7 +54,7 @@ struct LossType {
   // \return transformed prediction
   inline float pred_transform(float x) const {
     switch (loss_type) {
-      case kLinearSquare: {printf("ddd");return x;}
+      case kLinearSquare: {return x;}
       default: utils::error("unknown loss_type"); return 0.0f;
     }
   }
