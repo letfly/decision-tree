@@ -33,4 +33,18 @@ cd gradient_boosting
 ./run.sh
 ```
 ### Required Parameters
+- train_path = "examples/train_reg.txt"
+- eval[test] = "examples/test_reg.txt"
+- test_reg = "examples/test_reg.txt"
+
 ### Optional Parameters
+- booster = gbtree
+- objective = reg:linear
+
+- eta = 1.0
+- gamma = 1.0
+- min_child_weight = 1
+- max_depth = 3
+
+- num_round = 2
+- save_period = 0
